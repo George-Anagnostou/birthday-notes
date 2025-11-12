@@ -4,7 +4,7 @@ import { addNote, readNotes } from '@/lib/storage';
 // POST - Add a new note
 export async function POST(request: NextRequest) {
   try {
-    const { name, message, accessCode } = await request.json();
+    const { name, message, accessCode, images } = await request.json();
 
     // Verify access code
     const correctCode = process.env.ACCESS_CODE || 'birthday2024';
@@ -34,7 +34,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const note = addNote(name.trim(), message.trim());
+    // Validate images array
+    const imageUrls = images || [];
+    if (!Array.isArray(imageUrls)) {
+      return NextResponse.json(
+        { error: 'Images must be an array' },
+        { status: 400 }
+      );
+    }
+
+    if (imageUrls.length > 5) {
+      return NextResponse.json(
+        { error: 'Maximum 5 images allowed' },
+        { status: 400 }
+      );
+    }
+
+    const note = await addNote(name.trim(), message.trim(), imageUrls);
     return NextResponse.json({ success: true, note });
   } catch (error) {
     console.error('Error adding note:', error);
@@ -55,7 +71,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const notes = readNotes();
+    const notes = await readNotes();
     return NextResponse.json({ notes });
   } catch (error) {
     console.error('Error fetching notes:', error);

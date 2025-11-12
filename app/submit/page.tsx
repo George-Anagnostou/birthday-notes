@@ -11,6 +11,8 @@ export default function SubmitPage() {
   const [error, setError] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const router = useRouter();
 
   useEffect(() => {
@@ -21,6 +23,51 @@ export default function SubmitPage() {
     }
   }, [router]);
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+
+    // Limit to 5 images
+    if (files.length + selectedImages.length > 5) {
+      setError('Maximum 5 images allowed');
+      return;
+    }
+
+    // Validate file types and sizes
+    const validFiles: File[] = [];
+    for (const file of files) {
+      if (!file.type.startsWith('image/')) {
+        setError('Only image files are allowed');
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        setError('Each image must be less than 5MB');
+        return;
+      }
+      validFiles.push(file);
+    }
+
+    // Create previews
+    const newPreviews: string[] = [];
+    validFiles.forEach(file => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        newPreviews.push(reader.result as string);
+        if (newPreviews.length === validFiles.length) {
+          setImagePreviews([...imagePreviews, ...newPreviews]);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+
+    setSelectedImages([...selectedImages, ...validFiles]);
+    setError('');
+  };
+
+  const removeImage = (index: number) => {
+    setSelectedImages(selectedImages.filter((_, i) => i !== index));
+    setImagePreviews(imagePreviews.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -28,16 +75,44 @@ export default function SubmitPage() {
 
     try {
       const accessCode = sessionStorage.getItem('accessCode');
+
+      // Upload images first if any are selected
+      let imageUrls: string[] = [];
+      if (selectedImages.length > 0) {
+        const formData = new FormData();
+        selectedImages.forEach(image => {
+          formData.append('images', image);
+        });
+
+        const uploadResponse = await fetch('/api/upload-image', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!uploadResponse.ok) {
+          const uploadData = await uploadResponse.json();
+          setError(uploadData.error || 'Failed to upload images');
+          setLoading(false);
+          return;
+        }
+
+        const uploadData = await uploadResponse.json();
+        imageUrls = uploadData.urls;
+      }
+
+      // Submit note with image URLs
       const response = await fetch('/api/notes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, message, accessCode }),
+        body: JSON.stringify({ name, message, accessCode, images: imageUrls }),
       });
 
       if (response.ok) {
         setSubmitted(true);
         setName('');
         setMessage('');
+        setSelectedImages([]);
+        setImagePreviews([]);
       } else {
         const data = await response.json();
         setError(data.error || 'Failed to submit your message. Please try again.');
@@ -166,6 +241,62 @@ export default function SubmitPage() {
                   </p>
                 </>
               )}
+            </div>
+
+            {/* Image Upload Section */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Add Photos (Optional)
+              </label>
+              <p className="text-xs text-gray-500 mb-3">
+                You can add up to 5 images. Each image must be less than 5MB.
+              </p>
+
+              <div className="space-y-3">
+                {/* Image Previews */}
+                {imagePreviews.length > 0 && (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {imagePreviews.map((preview, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={preview}
+                          alt={`Preview ${index + 1}`}
+                          className="w-full h-32 object-cover rounded-lg border-2 border-pink-200"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(index)}
+                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* File Input */}
+                {selectedImages.length < 5 && (
+                  <label className="block">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleImageSelect}
+                      className="hidden"
+                    />
+                    <div className="border-2 border-dashed border-pink-200 rounded-xl p-6 text-center cursor-pointer hover:border-pink-400 transition-all bg-pink-50 hover:bg-pink-100">
+                      <div className="text-3xl mb-2">📸</div>
+                      <p className="text-sm text-gray-600">
+                        Click to select images
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {selectedImages.length}/5 images selected
+                      </p>
+                    </div>
+                  </label>
+                )}
+              </div>
             </div>
 
             {error && (

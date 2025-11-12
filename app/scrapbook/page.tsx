@@ -204,6 +204,19 @@ export default function ScrapbookPage() {
                       className="text-gray-700 break-words prose prose-sm max-w-none prose-headings:text-gray-800 prose-headings:font-bold prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-li:my-1"
                       dangerouslySetInnerHTML={{ __html: renderMarkdown(note.message) }}
                     />
+                    {/* Display images if any */}
+                    {note.images && note.images.length > 0 && (
+                      <div className="mt-4 grid grid-cols-2 gap-2">
+                        {note.images.map((imageUrl, imgIndex) => (
+                          <img
+                            key={imgIndex}
+                            src={imageUrl}
+                            alt={`Photo ${imgIndex + 1}`}
+                            className="w-full h-32 object-cover rounded-lg"
+                          />
+                        ))}
+                      </div>
+                    )}
                     <div className="text-xs text-gray-600 mt-4">
                       {new Date(note.timestamp).toLocaleDateString()}
                     </div>
