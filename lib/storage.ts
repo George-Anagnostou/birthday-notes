@@ -1,4 +1,4 @@
-import { createPool, type VercelPool } from '@vercel/postgres';
+import postgres from 'postgres';
 import { Note } from '@/types/note';
 import { getPostgresUrl, isDevelopment } from './db-config';
 
@@ -9,32 +9,41 @@ import { getPostgresUrl, isDevelopment } from './db-config';
  * Environment-aware: Automatically uses dev or prod database based on NODE_ENV
  */
 
-// Lazy pool creation - only create when actually needed
-let pool: VercelPool | null = null;
+// Lazy SQL client creation - only create when actually needed
+let sql: ReturnType<typeof postgres> | null = null;
+let isInitialized = false;
 
-function getPool(): VercelPool {
-  if (!pool) {
-    pool = createPool({
-      connectionString: getPostgresUrl(),
-    });
+function getSQL() {
+  if (!sql) {
+    const connectionString = getPostgresUrl();
+    if (!connectionString) {
+      throw new Error('Database connection string not configured');
+    }
+    // Create postgres.js client (which @vercel/postgres uses under the hood)
+    sql = postgres(connectionString);
   }
-  return pool;
+  return sql;
 }
 
-// Helper to get SQL client
-function getSQL() {
-  return getPool().sql;
+// Auto-initialize database on first access
+async function ensureInitialized() {
+  if (!isInitialized) {
+    await initializeDatabase();
+    isInitialized = true;
+  }
 }
 
 // Read all notes from database
 export async function readNotes(): Promise<Note[]> {
   try {
+    await ensureInitialized();
+
     if (isDevelopment()) {
       console.log('📊 Reading from DEV database');
     }
 
     const sql = getSQL();
-    const { rows } = await sql<Note & { images: any }>`
+    const rows = await sql<(Note & { images: any })[]>`
       SELECT id, name, message, timestamp, images
       FROM notes
       ORDER BY timestamp DESC
@@ -67,6 +76,8 @@ export async function addNote(
   };
 
   try {
+    await ensureInitialized();
+
     if (isDevelopment()) {
       console.log('📝 Writing to DEV database');
     }

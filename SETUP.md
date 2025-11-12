@@ -69,7 +69,7 @@ BLOB_READ_WRITE_TOKEN="vercel_blob_..."    # Your prod blob store
 
 ### 2. Initialize the Database
 
-The database table will be created automatically on first use:
+**The database table is created automatically on first use!** Just start your app and submit a note - the table and indexes will be created automatically.
 
 ```bash
 # Start your development server
@@ -78,7 +78,7 @@ npm run dev
 # Submit a test note - this will auto-create the table
 ```
 
-Or manually run the schema in Vercel Dashboard:
+Alternatively, you can manually run the schema in Vercel Dashboard:
 - Go to Vercel Dashboard → Storage → Your DEV Postgres → Query
 - Paste and run the contents of `db/schema.sql`
 
