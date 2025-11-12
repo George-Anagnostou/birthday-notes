@@ -131,20 +131,10 @@ export default function PrintPage() {
         @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Playfair+Display:wght@400;700;900&family=Open+Sans:wght@400;600&display=swap');
 
         @media print {
-          /* Greeting card page size: 5x7 inches */
+          /* 5x7 inch greeting card format */
           @page {
             size: 5in 7in;
             margin: 0;
-          }
-
-          /* Advanced typography settings */
-          body {
-            font-feature-settings: "liga" 1, "kern" 1;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-            hyphens: auto;
-            orphans: 3;
-            widows: 3;
           }
 
           /* Hide screen-only elements */
@@ -152,22 +142,25 @@ export default function PrintPage() {
             display: none !important;
           }
 
-          /* Remove padding from wrapper in print mode */
+          /* Remove wrapper padding */
           .print-wrapper {
             padding: 0 !important;
           }
 
-          /* Each card starts on a new page and can span multiple pages if needed */
+          /* Simple card layout - each card starts on new page */
           .birthday-card {
             page-break-before: always;
             page-break-after: always;
+            page-break-inside: auto;
             width: 5in !important;
-            min-height: 7in !important;
-            height: auto !important;
+            height: 7in !important;
             margin: 0 !important;
-            display: flex !important;
-            flex-direction: column !important;
+            padding: 0.75in !important;
             box-sizing: border-box !important;
+            border: 3px solid #ec4899 !important;
+            border-radius: 0.5rem;
+            background: white !important;
+            box-shadow: none !important;
           }
 
           /* First card doesn't need page break before */
@@ -180,38 +173,33 @@ export default function PrintPage() {
             page-break-after: auto;
           }
 
-          /* Keep header together, don't break it */
+          /* Keep header together */
           .card-header-decorative {
             page-break-inside: avoid;
             page-break-after: avoid;
             background: linear-gradient(135deg, #fce7f3 0%, #e9d5ff 50%, #dbeafe 100%) !important;
-            flex-shrink: 0;
+            padding: 0.75rem !important;
+            margin-bottom: 0.75rem !important;
           }
 
-          /* Card body can expand and allows page breaks */
-          .card-body {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-          }
-
-          /* Keep footer together and push to bottom */
+          /* Keep footer/signature together */
           .card-footer-section {
             page-break-inside: avoid;
-            margin-top: auto;
-            flex-shrink: 0;
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 2px solid #e5e7eb;
           }
 
-          /* Prevent awkward breaks in headings */
-          h1, h2, h3, h4 {
-            page-break-after: avoid;
-            break-after: avoid;
+          /* Images - fit within 5x7 format */
+          .card-body img {
+            max-width: 100%;
+            max-height: 1.5in;
+            page-break-inside: avoid;
           }
 
-          /* Prevent paragraphs from breaking awkwardly */
-          p {
-            orphans: 3;
-            widows: 3;
+          /* Typography adjustments for 5x7 */
+          body {
+            font-size: 10pt;
           }
 
           /* Ensure colors print */
@@ -219,25 +207,6 @@ export default function PrintPage() {
             print-color-adjust: exact;
             -webkit-print-color-adjust: exact;
             color-adjust: exact;
-          }
-
-          /* Card-specific styling */
-          .card-border {
-            border: 3px solid #ec4899 !important;
-            box-shadow: none !important;
-          }
-
-          /* Image sizing for print */
-          .birthday-card-image {
-            max-width: 100%;
-            max-height: 3in;
-            width: auto;
-            height: auto;
-            object-fit: contain;
-            display: block;
-            margin: 0.75rem auto;
-            page-break-inside: avoid;
-            border-radius: 8px;
           }
 
           /* Gradient text fallback for print */
@@ -248,27 +217,38 @@ export default function PrintPage() {
           }
         }
 
-        /* Screen preview styles - make it look like cards */
+        /* Screen preview styles - 5x7 card preview */
         @media screen {
           .birthday-card {
             width: 5in;
             min-height: 7in;
             margin: 2rem auto;
+            padding: 0.75in;
             background: white;
+            border: 3px solid #ec4899;
+            border-radius: 0.5rem;
+            box-sizing: border-box;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-            page-break-after: always;
           }
 
-          .birthday-card-image {
-            max-width: 100%;
-            max-height: 400px;
-            width: auto;
-            height: auto;
-            object-fit: contain;
-            display: block;
-            margin: 0.75rem auto;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+          .card-header-decorative {
+            background: linear-gradient(135deg, #fce7f3 0%, #e9d5ff 50%, #dbeafe 100%);
+            padding: 0.75rem;
+            margin-bottom: 0.75rem;
+            border-radius: 0.5rem;
+          }
+
+          .card-body {
+            margin-bottom: 0.75rem;
+          }
+
+          .card-body img {
+            max-height: 200px;
+          }
+
+          .card-footer-section {
+            padding-top: 0.75rem;
+            border-top: 2px solid #e5e7eb;
           }
         }
       `}</style>
@@ -324,85 +304,62 @@ export default function PrintPage() {
             notes.map((note, index) => (
               <div
                 key={note.id}
-                className="birthday-card card-border rounded-lg overflow-hidden"
+                className="birthday-card"
               >
-                {/* Card Header - Decorative */}
-                <div className="card-header-decorative px-6 py-8 text-center border-b-4 border-pink-400">
-                  {/* Decorative top element */}
-                  <div className="text-4xl mb-3">🎉</div>
-
-                  {/* Title */}
+                {/* Card Header */}
+                <div className="card-header-decorative text-center rounded-lg">
+                  <div className="text-3xl mb-2">🎉</div>
                   <h2
-                    className="gradient-text text-3xl font-bold mb-3 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 bg-clip-text text-transparent"
+                    className="gradient-text text-2xl font-bold mb-2 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 bg-clip-text text-transparent"
                     style={{ fontFamily: "'Playfair Display', serif" }}
                   >
-                    Happy Birthday
+                    Happy Birthday {birthdayName}!
                   </h2>
-                  <p
-                    className="text-2xl font-bold text-pink-600 mb-1"
-                    style={{ fontFamily: "'Playfair Display', serif" }}
-                  >
-                    {birthdayName}!
+                  <p className="text-sm text-gray-600" style={{ fontFamily: "'Open Sans', sans-serif" }}>
+                    From: <span className="font-semibold text-purple-700">{note.name}</span>
                   </p>
-
-                  {/* From line */}
-                  <div className="mt-4 pt-4 border-t-2 border-pink-300/50">
-                    <p className="text-sm text-gray-600" style={{ fontFamily: "'Open Sans', sans-serif" }}>
-                      A message from
-                    </p>
-                    <p
-                      className="text-lg font-semibold text-purple-700 mt-1"
-                      style={{ fontFamily: "'Caveat', cursive" }}
-                    >
-                      {note.name}
-                    </p>
-                  </div>
                 </div>
 
                 {/* Card Body - Message Content */}
-                <div className="card-body px-6 py-8">
+                <div className="card-body">
                   <div
                     className="text-gray-800 leading-relaxed prose prose-sm max-w-none
-                      prose-headings:text-gray-900 prose-headings:font-bold prose-headings:mb-2
-                      prose-p:my-2 prose-p:text-base prose-p:leading-relaxed
-                      prose-ul:my-2 prose-ol:my-2 prose-li:my-1
-                      prose-strong:text-pink-700 prose-em:text-purple-700
-                      prose-img:rounded-lg prose-img:shadow-md"
-                    style={{ fontFamily: "'Open Sans', sans-serif", fontSize: '14px' }}
+                      prose-headings:text-gray-900 prose-headings:font-bold
+                      prose-p:my-2 prose-ul:my-2 prose-ol:my-2
+                      prose-strong:text-pink-700 prose-em:text-purple-700"
+                    style={{ fontFamily: "'Open Sans', sans-serif", fontSize: '13px' }}
                     dangerouslySetInnerHTML={{ __html: renderMarkdown(note.message) }}
                   />
 
                   {/* Display images if any */}
                   {note.images && note.images.length > 0 && (
-                    <div className="mt-6 grid grid-cols-2 gap-4">
+                    <div className="mt-4 grid grid-cols-2 gap-3">
                       {note.images.map((imageUrl, imgIndex) => (
                         <img
                           key={imgIndex}
                           src={imageUrl}
                           alt={`Photo ${imgIndex + 1}`}
-                          className="w-full h-48 object-cover rounded-lg"
+                          className="w-full h-32 object-cover rounded-lg"
                         />
                       ))}
                     </div>
                   )}
+                </div>
 
-                  {/* Letter footer */}
-                  <div className="card-footer-section mt-8 pt-8 border-t-2 border-gray-200 text-right">
-                    <p className="text-gray-600 italic">With love,</p>
-                    <p className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-500 mt-2">
-                      {note.name}
-                    </p>
-                    <p className="text-xs text-gray-400 mt-2" style={{ fontFamily: "'Open Sans', sans-serif" }}>
-                      {new Date(Number(note.timestamp)).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                      })}
-                    </p>
-                  </div>
-
-                  {/* Decorative bottom elements */}
-                  <div className="mt-6 flex justify-center gap-3 text-2xl opacity-60">
+                {/* Signature Footer */}
+                <div className="card-footer-section text-right">
+                  <p className="text-gray-600 italic text-sm">With love,</p>
+                  <p className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-500 mt-1">
+                    {note.name}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1" style={{ fontFamily: "'Open Sans', sans-serif" }}>
+                    {new Date(Number(note.timestamp)).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                    })}
+                  </p>
+                  <div className="mt-4 flex justify-center gap-2 text-xl opacity-60">
                     💝 ✨ 🎂
                   </div>
                 </div>
