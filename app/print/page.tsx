@@ -349,7 +349,6 @@ export default function PrintPage() {
                     style={{ fontFamily: "'Open Sans', sans-serif", fontSize: '14px' }}
                     dangerouslySetInnerHTML={{ __html: renderMarkdown(note.message) }}
                   />
-                </div>
 
                   {/* Display images if any */}
                   {note.images && note.images.length > 0 && (
@@ -372,7 +371,7 @@ export default function PrintPage() {
                       {note.name}
                     </p>
                     <p className="text-xs text-gray-400 mt-2" style={{ fontFamily: "'Open Sans', sans-serif" }}>
-                      {new Date(note.timestamp).toLocaleDateString('en-US', {
+                      {new Date(Number(note.timestamp)).toLocaleDateString('en-US', {
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric',

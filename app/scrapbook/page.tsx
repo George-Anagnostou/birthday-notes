@@ -218,7 +218,7 @@ export default function ScrapbookPage() {
                       </div>
                     )}
                     <div className="text-xs text-gray-600 mt-4">
-                      {new Date(note.timestamp).toLocaleDateString()}
+                      {new Date(Number(note.timestamp)).toLocaleDateString()}
                     </div>
                   </div>
                 </div>
