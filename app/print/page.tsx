@@ -351,16 +351,24 @@ export default function PrintPage() {
                   />
                 </div>
 
-                {/* Card Footer - Signature */}
-                <div className="px-6 pb-8 card-footer-section">
-                  <div className="border-t-2 border-pink-200 pt-4 text-right">
-                    <p className="text-gray-500 text-sm italic mb-1" style={{ fontFamily: "'Open Sans', sans-serif" }}>
-                      With love,
-                    </p>
-                    <p
-                      className="text-3xl font-bold text-pink-600 mt-1"
-                      style={{ fontFamily: "'Caveat', cursive" }}
-                    >
+                  {/* Display images if any */}
+                  {note.images && note.images.length > 0 && (
+                    <div className="mt-6 grid grid-cols-2 gap-4">
+                      {note.images.map((imageUrl, imgIndex) => (
+                        <img
+                          key={imgIndex}
+                          src={imageUrl}
+                          alt={`Photo ${imgIndex + 1}`}
+                          className="w-full h-48 object-cover rounded-lg"
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Letter footer */}
+                  <div className="mt-8 pt-8 border-t-2 border-gray-200 text-right">
+                    <p className="text-gray-600 italic">With love,</p>
+                    <p className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-500 mt-2">
                       {note.name}
                     </p>
                     <p className="text-xs text-gray-400 mt-2" style={{ fontFamily: "'Open Sans', sans-serif" }}>
