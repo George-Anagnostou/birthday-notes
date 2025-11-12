@@ -152,10 +152,22 @@ export default function PrintPage() {
             display: none !important;
           }
 
+          /* Remove padding from wrapper in print mode */
+          .print-wrapper {
+            padding: 0 !important;
+          }
+
           /* Each card starts on a new page and can span multiple pages if needed */
           .birthday-card {
             page-break-before: always;
             page-break-after: always;
+            width: 5in !important;
+            min-height: 7in !important;
+            height: auto !important;
+            margin: 0 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            box-sizing: border-box !important;
           }
 
           /* First card doesn't need page break before */
@@ -168,16 +180,26 @@ export default function PrintPage() {
             page-break-after: auto;
           }
 
-          /* Keep header and footer together, don't break them */
+          /* Keep header together, don't break it */
           .card-header-decorative {
             page-break-inside: avoid;
             page-break-after: avoid;
             background: linear-gradient(135deg, #fce7f3 0%, #e9d5ff 50%, #dbeafe 100%) !important;
+            flex-shrink: 0;
           }
 
+          /* Card body can expand and allows page breaks */
+          .card-body {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+          }
+
+          /* Keep footer together and push to bottom */
           .card-footer-section {
             page-break-inside: avoid;
-            page-break-before: avoid;
+            margin-top: auto;
+            flex-shrink: 0;
           }
 
           /* Prevent awkward breaks in headings */
@@ -291,7 +313,7 @@ export default function PrintPage() {
         </div>
 
         {/* Print content - Cards */}
-        <div className="py-8">
+        <div className="py-8 print-wrapper">
           {notes.length === 0 ? (
             <div className="text-center py-20">
               <p className="text-gray-600 text-lg">
@@ -338,7 +360,7 @@ export default function PrintPage() {
                 </div>
 
                 {/* Card Body - Message Content */}
-                <div className="px-6 py-8">
+                <div className="card-body px-6 py-8">
                   <div
                     className="text-gray-800 leading-relaxed prose prose-sm max-w-none
                       prose-headings:text-gray-900 prose-headings:font-bold prose-headings:mb-2
@@ -365,7 +387,7 @@ export default function PrintPage() {
                   )}
 
                   {/* Letter footer */}
-                  <div className="mt-8 pt-8 border-t-2 border-gray-200 text-right">
+                  <div className="card-footer-section mt-8 pt-8 border-t-2 border-gray-200 text-right">
                     <p className="text-gray-600 italic">With love,</p>
                     <p className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-500 mt-2">
                       {note.name}
