@@ -8,9 +8,31 @@ marked.setOptions({
 });
 
 /**
+ * Sanitize image tags to only allow safe attributes
+ */
+function sanitizeImageTags(html: string): string {
+  return html.replace(/<img\b[^>]*>/gi, (match) => {
+    // Extract src and alt attributes only
+    const srcMatch = match.match(/src=["']([^"']*)["']/i);
+    const altMatch = match.match(/alt=["']([^"']*)["']/i);
+
+    const src = srcMatch ? srcMatch[1] : '';
+    const alt = altMatch ? altMatch[1] : '';
+
+    // Only allow http(s) URLs and data URLs
+    if (src && (src.startsWith('http://') || src.startsWith('https://') || src.startsWith('data:'))) {
+      return `<img src="${src}" alt="${alt}" class="birthday-card-image" />`;
+    }
+
+    // If invalid src, return empty string
+    return '';
+  });
+}
+
+/**
  * Converts markdown text to sanitized HTML
- * Supports basic markdown features: headings, lists, bold, italic, etc.
- * Does not support: tables, links, images, or advanced features
+ * Supports basic markdown features: headings, lists, bold, italic, images
+ * Does not support: tables, links, or advanced features
  *
  * @param markdown - The markdown text to convert
  * @returns HTML string (sanitized)
@@ -22,12 +44,13 @@ export function renderMarkdown(markdown: string): string {
     // Parse the markdown
     const html = marked.parse(markdown, { async: false }) as string;
 
-    // Remove potentially dangerous tags (links, images, etc.)
-    // Since we're using marked with headerIds: false, we don't need to worry about IDs
-    const sanitized = html
+    // Sanitize images (allow but restrict attributes)
+    const withSafeImages = sanitizeImageTags(html);
+
+    // Remove potentially dangerous tags (links, tables, etc.)
+    const sanitized = withSafeImages
       .replace(/<a\b[^>]*>/gi, '')
       .replace(/<\/a>/gi, '')
-      .replace(/<img\b[^>]*>/gi, '')
       .replace(/<table\b[^>]*>[\s\S]*?<\/table>/gi, '');
 
     return sanitized;
