@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { put } from '@vercel/blob';
+import { getBlobToken, isDevelopment } from '@/lib/db-config';
 
 /**
  * API route for uploading images to Vercel Blob
  * Accepts multipart/form-data with image files
  * Returns array of blob URLs
+ *
+ * Environment-aware: Automatically uses dev or prod blob storage based on NODE_ENV
  */
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -12,6 +15,10 @@ const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'ima
 
 export async function POST(request: NextRequest) {
   try {
+    if (isDevelopment()) {
+      console.log('📸 Uploading to DEV blob storage');
+    }
+
     const formData = await request.formData();
     const files = formData.getAll('images') as File[];
 
@@ -27,6 +34,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Maximum 5 images allowed' },
         { status: 400 }
+      );
+    }
+
+    // Get environment-specific blob token
+    const blobToken = getBlobToken();
+    if (!blobToken) {
+      const envVar = isDevelopment() ? 'BLOB_READ_WRITE_TOKEN_DEV' : 'BLOB_READ_WRITE_TOKEN';
+      return NextResponse.json(
+        { error: `Blob storage not configured. Please set ${envVar} environment variable.` },
+        { status: 500 }
       );
     }
 
@@ -50,16 +67,18 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Generate unique filename
+      // Generate unique filename with environment prefix
       const timestamp = Date.now();
       const randomString = Math.random().toString(36).substring(2, 9);
       const extension = file.name.split('.').pop() || 'jpg';
-      const filename = `birthday-photos/${timestamp}-${randomString}.${extension}`;
+      const envPrefix = isDevelopment() ? 'dev' : 'prod';
+      const filename = `birthday-photos/${envPrefix}/${timestamp}-${randomString}.${extension}`;
 
-      // Upload to Vercel Blob
+      // Upload to Vercel Blob with environment-specific token
       const blob = await put(filename, file, {
         access: 'public',
         addRandomSuffix: false,
+        token: blobToken,
       });
 
       uploadedUrls.push(blob.url);

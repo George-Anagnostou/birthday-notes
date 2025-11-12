@@ -1,15 +1,49 @@
-import { sql } from '@vercel/postgres';
+import postgres from 'postgres';
 import { Note } from '@/types/note';
+import { getPostgresUrl, isDevelopment } from './db-config';
 
 /**
  * Storage layer using Vercel Postgres
  * This replaces the previous file-based storage which doesn't work on Vercel's serverless infrastructure
+ *
+ * Environment-aware: Automatically uses dev or prod database based on NODE_ENV
  */
+
+// Lazy SQL client creation - only create when actually needed
+let sql: ReturnType<typeof postgres> | null = null;
+let isInitialized = false;
+
+function getSQL() {
+  if (!sql) {
+    const connectionString = getPostgresUrl();
+    if (!connectionString) {
+      throw new Error('Database connection string not configured');
+    }
+    // Create postgres.js client (which @vercel/postgres uses under the hood)
+    sql = postgres(connectionString);
+  }
+  return sql;
+}
+
+// Auto-initialize database on first access
+async function ensureInitialized() {
+  if (!isInitialized) {
+    await initializeDatabase();
+    isInitialized = true;
+  }
+}
 
 // Read all notes from database
 export async function readNotes(): Promise<Note[]> {
   try {
-    const { rows } = await sql<Note & { images: any }>`
+    await ensureInitialized();
+
+    if (isDevelopment()) {
+      console.log('📊 Reading from DEV database');
+    }
+
+    const sql = getSQL();
+    const rows = await sql<(Note & { images: any })[]>`
       SELECT id, name, message, timestamp, images
       FROM notes
       ORDER BY timestamp DESC
@@ -42,9 +76,16 @@ export async function addNote(
   };
 
   try {
+    await ensureInitialized();
+
+    if (isDevelopment()) {
+      console.log('📝 Writing to DEV database');
+    }
+
     // Store images as JSON string for compatibility
     const imagesJson = JSON.stringify(newNote.images || []);
 
+    const sql = getSQL();
     await sql`
       INSERT INTO notes (id, name, message, timestamp, images)
       VALUES (${newNote.id}, ${newNote.name}, ${newNote.message}, ${newNote.timestamp}, ${imagesJson}::jsonb)
@@ -60,6 +101,8 @@ export async function addNote(
 // Initialize database (create table if it doesn't exist)
 export async function initializeDatabase(): Promise<void> {
   try {
+    const sql = getSQL();
+
     await sql`
       CREATE TABLE IF NOT EXISTS notes (
         id VARCHAR(255) PRIMARY KEY,
