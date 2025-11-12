@@ -2,6 +2,8 @@
 
 This app uses Vercel Postgres and Vercel Blob for production-ready storage.
 
+> **Note**: Vercel Postgres is powered by Supabase. Your connection URLs will be `supabase.com` domains, which is expected and correct.
+
 ## 🔒 Dev/Prod Isolation
 
 **Important**: Development and production use **separate** databases and blob storage to prevent accidental data corruption.
