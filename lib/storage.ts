@@ -1,55 +1,83 @@
-import fs from 'fs';
-import path from 'path';
-import { Note, NotesData } from '@/types/note';
+import { sql } from '@vercel/postgres';
+import { Note } from '@/types/note';
 
-const DATA_DIR = path.join(process.cwd(), 'data');
-const NOTES_FILE = path.join(DATA_DIR, 'notes.json');
+/**
+ * Storage layer using Vercel Postgres
+ * This replaces the previous file-based storage which doesn't work on Vercel's serverless infrastructure
+ */
 
-// Ensure data directory exists
-function ensureDataDir() {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-  }
-}
-
-// Read all notes from file
-export function readNotes(): Note[] {
+// Read all notes from database
+export async function readNotes(): Promise<Note[]> {
   try {
-    ensureDataDir();
-    if (!fs.existsSync(NOTES_FILE)) {
-      return [];
-    }
-    const data = fs.readFileSync(NOTES_FILE, 'utf-8');
-    const parsed: NotesData = JSON.parse(data);
-    return parsed.notes || [];
+    const { rows } = await sql<Note & { images: any }>`
+      SELECT id, name, message, timestamp, images
+      FROM notes
+      ORDER BY timestamp DESC
+    `;
+
+    // Parse images from JSON and ensure it's always an array
+    return rows.map(row => ({
+      ...row,
+      images: row.images ? (typeof row.images === 'string' ? JSON.parse(row.images) : row.images) : [],
+    }));
   } catch (error) {
     console.error('Error reading notes:', error);
+    // If table doesn't exist yet, return empty array
     return [];
   }
 }
 
-// Write notes to file
-export function writeNotes(notes: Note[]): void {
-  try {
-    ensureDataDir();
-    const data: NotesData = { notes };
-    fs.writeFileSync(NOTES_FILE, JSON.stringify(data, null, 2), 'utf-8');
-  } catch (error) {
-    console.error('Error writing notes:', error);
-    throw error;
-  }
-}
-
 // Add a new note
-export function addNote(name: string, message: string): Note {
-  const notes = readNotes();
+export async function addNote(
+  name: string,
+  message: string,
+  images: string[] = []
+): Promise<Note> {
   const newNote: Note = {
     id: `note-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     name,
     message,
     timestamp: Date.now(),
+    images,
   };
-  notes.push(newNote);
-  writeNotes(notes);
-  return newNote;
+
+  try {
+    // Store images as JSON string for compatibility
+    const imagesJson = JSON.stringify(newNote.images || []);
+
+    await sql`
+      INSERT INTO notes (id, name, message, timestamp, images)
+      VALUES (${newNote.id}, ${newNote.name}, ${newNote.message}, ${newNote.timestamp}, ${imagesJson}::jsonb)
+    `;
+
+    return newNote;
+  } catch (error) {
+    console.error('Error adding note:', error);
+    throw error;
+  }
+}
+
+// Initialize database (create table if it doesn't exist)
+export async function initializeDatabase(): Promise<void> {
+  try {
+    await sql`
+      CREATE TABLE IF NOT EXISTS notes (
+        id VARCHAR(255) PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        message TEXT NOT NULL,
+        timestamp BIGINT NOT NULL,
+        images JSONB DEFAULT '[]'::jsonb,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `;
+
+    await sql`
+      CREATE INDEX IF NOT EXISTS idx_notes_timestamp ON notes(timestamp DESC)
+    `;
+
+    console.log('Database initialized successfully');
+  } catch (error) {
+    console.error('Error initializing database:', error);
+    throw error;
+  }
 }
