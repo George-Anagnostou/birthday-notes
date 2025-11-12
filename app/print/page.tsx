@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Note } from '@/types/note';
+import { renderMarkdown } from '@/lib/markdown';
 
 export default function PrintPage() {
   const [notes, setNotes] = useState<Note[]>([]);
@@ -210,9 +211,10 @@ export default function PrintPage() {
                   </div>
 
                   {/* Letter content */}
-                  <div className="text-gray-800 leading-relaxed whitespace-pre-wrap text-lg">
-                    {note.message}
-                  </div>
+                  <div
+                    className="text-gray-800 leading-relaxed text-lg prose prose-lg max-w-none prose-headings:text-gray-900 prose-headings:font-bold prose-p:my-3 prose-ul:my-3 prose-ol:my-3 prose-li:my-1"
+                    dangerouslySetInnerHTML={{ __html: renderMarkdown(note.message) }}
+                  />
 
                   {/* Letter footer */}
                   <div className="mt-8 pt-8 border-t-2 border-gray-200 text-right">

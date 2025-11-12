@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Note } from '@/types/note';
+import { renderMarkdown } from '@/lib/markdown';
 
 const colors = [
   'bg-pink-200',
@@ -199,9 +200,10 @@ export default function ScrapbookPage() {
                       </h3>
                       <span className="text-2xl">💝</span>
                     </div>
-                    <p className="text-gray-700 whitespace-pre-wrap break-words">
-                      {note.message}
-                    </p>
+                    <div
+                      className="text-gray-700 break-words prose prose-sm max-w-none prose-headings:text-gray-800 prose-headings:font-bold prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-li:my-1"
+                      dangerouslySetInnerHTML={{ __html: renderMarkdown(note.message) }}
+                    />
                     <div className="text-xs text-gray-600 mt-4">
                       {new Date(note.timestamp).toLocaleDateString()}
                     </div>
