@@ -2,90 +2,142 @@
 
 This app uses Vercel Postgres and Vercel Blob for production-ready storage.
 
+## 🔒 Dev/Prod Isolation
+
+**Important**: Development and production use **separate** databases and blob storage to prevent accidental data corruption.
+
+- **Development** (`npm run dev`): Uses `*_DEV` environment variables → separate dev database
+- **Production** (Vercel deployment): Uses standard environment variables → separate prod database
+
+All data is stored in Vercel's cloud (even in development), but completely isolated between environments.
+
 ## Environment Variables
 
-Create a `.env.local` file in the project root with these variables:
+Create a `.env.local` file in the project root:
 
 ```bash
 # Access control
 ACCESS_CODE=your-secret-access-code
 ADMIN_PASSWORD=your-admin-password
 
-# Vercel Postgres (automatically added when you connect the database)
-POSTGRES_URL="postgres://..."
-POSTGRES_PRISMA_URL="postgres://..."
-POSTGRES_URL_NON_POOLING="postgres://..."
-POSTGRES_USER="..."
-POSTGRES_HOST="..."
-POSTGRES_PASSWORD="..."
-POSTGRES_DATABASE="..."
+# ==============================================================================
+# DEVELOPMENT STORAGE (required for local dev)
+# ==============================================================================
+POSTGRES_URL_DEV="postgres://..."          # Your dev database
+BLOB_READ_WRITE_TOKEN_DEV="vercel_blob_..." # Your dev blob store
 
-# Vercel Blob (automatically added when you connect blob storage)
-BLOB_READ_WRITE_TOKEN="vercel_blob_..."
+# ==============================================================================
+# PRODUCTION STORAGE (auto-injected by Vercel)
+# ==============================================================================
+POSTGRES_URL="postgres://..."              # Your prod database
+BLOB_READ_WRITE_TOKEN="vercel_blob_..."    # Your prod blob store
 ```
 
 ## Setup Instructions
 
-### 1. Local Development Setup
+### 1. Create Separate Dev & Prod Storage
 
-#### Option A: Using Vercel CLI (Recommended)
-```bash
-# Install Vercel CLI
-npm i -g vercel
+#### Step 1: Create Development Storage
 
-# Link your project to Vercel
-vercel link
-
-# Pull environment variables (includes Postgres & Blob credentials)
-vercel env pull .env.local
-```
-
-#### Option B: Manual Setup
-If you want to set up Vercel Postgres and Blob locally for development:
-
-1. Go to your Vercel project dashboard
+1. Go to [Vercel Dashboard](https://vercel.com/dashboard)
 2. Navigate to **Storage** tab
-3. Create a **Postgres** database
-4. Create a **Blob** store
-5. Copy the environment variables to `.env.local`
+3. Click **Create Database** → **Postgres**
+   - Name it: `birthday-notes-dev`
+   - Click **Create**
+4. Click **Create Store** → **Blob**
+   - Name it: `birthday-photos-dev`
+   - Click **Create**
+5. Copy the environment variables:
+   - From Postgres → `.env` tab → Copy `POSTGRES_URL` → paste as `POSTGRES_URL_DEV` in your `.env.local`
+   - From Blob → Settings → Copy `BLOB_READ_WRITE_TOKEN` → paste as `BLOB_READ_WRITE_TOKEN_DEV`
+
+#### Step 2: Create Production Storage
+
+1. In Vercel Dashboard → **Storage** tab
+2. Click **Create Database** → **Postgres**
+   - Name it: `birthday-notes-prod`
+   - Click **Create**
+3. Click **Create Store** → **Blob**
+   - Name it: `birthday-photos-prod`
+   - Click **Create**
+4. **Connect to your Vercel project**:
+   - Go to your project → **Storage** tab
+   - Connect the prod Postgres and Blob stores
+   - Vercel will auto-inject environment variables in production
 
 ### 2. Initialize the Database
 
-The database table will be created automatically on first use, but you can also initialize it manually:
+The database table will be created automatically on first use:
 
 ```bash
 # Start your development server
 npm run dev
 
-# The table will be created on the first API request
-# Or you can create it manually using the Vercel Postgres dashboard
+# Submit a test note - this will auto-create the table
 ```
 
-Alternatively, run the schema SQL directly in the Vercel Postgres dashboard:
-- Go to Vercel Dashboard → Storage → Your Postgres DB → Query
+Or manually run the schema in Vercel Dashboard:
+- Go to Vercel Dashboard → Storage → Your DEV Postgres → Query
 - Paste and run the contents of `db/schema.sql`
 
-### 3. Production Deployment
+### 3. Verify Environment Separation
+
+Check the console logs when running your app:
+
+```bash
+npm run dev
+# You should see: 📊 Reading from DEV database
+# You should see: 📸 Uploading to DEV blob storage
+```
+
+In production (Vercel), logs won't show these dev indicators.
+
+### 4. Production Deployment
 
 1. Push your code to GitHub
-2. Deploy to Vercel (automatic if connected)
-3. Add Storage in Vercel Dashboard:
-   - Go to your project → **Storage** tab
-   - Click **Create Database** → **Postgres**
-   - Click **Create Store** → **Blob**
-4. Vercel automatically adds environment variables to your deployment
-5. Redeploy if needed
+2. Vercel auto-deploys
+3. Production environment uses the prod database (already connected)
+4. Done! Dev and prod are completely separated
+
+## How It Works
+
+### Environment Detection
+
+The app automatically detects the environment and uses the correct storage:
+
+```typescript
+// In development (NODE_ENV=development)
+POSTGRES_URL_DEV → Dev database
+BLOB_READ_WRITE_TOKEN_DEV → Dev blob storage
+
+// In production (on Vercel)
+POSTGRES_URL → Prod database
+BLOB_READ_WRITE_TOKEN → Prod blob storage
+```
+
+### File Organization
+
+Images are stored with environment prefixes:
+
+```
+Dev:  birthday-photos/dev/1234567890-abc123.jpg
+Prod: birthday-photos/prod/1234567890-abc123.jpg
+```
+
+This makes it easy to identify and clean up dev images in the Vercel Dashboard.
 
 ## Resetting Data (Development)
 
-To reset your development database:
+### Clear all dev notes:
 
-### Clear all notes:
+Go to Vercel Dashboard → Storage → `birthday-notes-dev` → Query:
+
 ```sql
 DELETE FROM notes;
 ```
 
-### Drop and recreate table:
+### Drop and recreate dev table:
+
 ```sql
 DROP TABLE notes;
 
@@ -94,77 +146,74 @@ CREATE TABLE notes (
   name VARCHAR(100) NOT NULL,
   message TEXT NOT NULL,
   timestamp BIGINT NOT NULL,
-  images TEXT[],
+  images JSONB DEFAULT '[]'::jsonb,
   created_at TIMESTAMP DEFAULT NOW()
 );
 
 CREATE INDEX idx_notes_timestamp ON notes(timestamp DESC);
 ```
 
-Run these commands in:
-- **Vercel Dashboard**: Storage → Your Postgres DB → Query tab
-- **Or locally**: Using a Postgres client connected to your dev database
+### Clear dev images:
 
-### Clear blob storage:
-Go to Vercel Dashboard → Storage → Your Blob Store → Delete individual files
-
-## How It Works
-
-### Data Flow
-
-1. **User submits note with images**:
-   - Images uploaded to `/api/upload-image` → Vercel Blob
-   - Returns image URLs
-   - Note + image URLs sent to `/api/notes` → Vercel Postgres
-
-2. **Viewing notes**:
-   - API fetches from Postgres (includes image URLs)
-   - Browser loads images from Vercel Blob CDN
-
-### Why This Approach?
-
-- **Vercel's filesystem is ephemeral** - file writes are lost after function execution
-- **Postgres** stores structured data (notes metadata)
-- **Blob** stores large binary files (images)
-- Both services are serverless-friendly and scale automatically
-- Free tier is generous for personal projects
+Go to Vercel Dashboard → Storage → `birthday-photos-dev` → Browse files → Delete
 
 ## Troubleshooting
 
-### Database connection errors
-- Ensure `.env.local` has all Postgres variables
-- Run `vercel env pull` to sync latest credentials
-- Check Vercel Dashboard → Storage → Postgres → Connection pooling is enabled
+### "Database connection error" in development
 
-### Image upload fails
-- Ensure `BLOB_READ_WRITE_TOKEN` is set
-- Check file size < 5MB
-- Verify file type is image/*
+- ✅ Check `.env.local` has `POSTGRES_URL_DEV`
+- ✅ Verify the URL is correct (copy from Vercel Dashboard)
+- ✅ Make sure dev database exists in Vercel Dashboard
 
-### Notes not persisting
-- Check Vercel logs for errors
-- Ensure database table exists (check Vercel Dashboard → Storage → Postgres → Data)
-- Verify Postgres connection string is valid
+### "Blob storage not configured"
+
+- ✅ Check `.env.local` has `BLOB_READ_WRITE_TOKEN_DEV`
+- ✅ Verify the token is correct (copy from Vercel Dashboard)
+- ✅ Make sure dev blob store exists
+
+### Production not working after deployment
+
+- ✅ Ensure prod Postgres is connected to project in Vercel Dashboard
+- ✅ Ensure prod Blob is connected to project
+- ✅ Check Vercel project settings → Environment Variables
+- ✅ Redeploy if you connected storage after initial deployment
+
+### Accidentally using prod database in dev
+
+**This shouldn't happen** with the current setup! The app explicitly uses:
+- `POSTGRES_URL_DEV` in development
+- `POSTGRES_URL` in production
+
+Check your `.env.local` - make sure you have `POSTGRES_URL_DEV` set correctly.
 
 ## Free Tier Limits
 
-### Vercel Postgres
+### Vercel Postgres (per database)
 - 60 hours compute time/month
 - 256 MB storage
-- Sufficient for hundreds of notes
+- **Two databases** (dev + prod) = 120 hours total ✅
 
-### Vercel Blob
+### Vercel Blob (per store)
 - 500k reads/month
 - 100k writes/month
 - 5GB bandwidth
-- Sufficient for dozens of image uploads
+- **Two stores** (dev + prod) fit comfortably in free tier ✅
+
+## Cost Safety
+
+With this setup:
+- ✅ Dev mistakes don't affect production
+- ✅ Both dev and prod fit in free tier
+- ✅ Can delete/reset dev data anytime
+- ✅ Clear separation makes debugging easier
 
 ## Next Steps
 
-1. ✅ Install dependencies: `npm install`
-2. ✅ Set up `.env.local` with environment variables
-3. ✅ Run development server: `npm run dev`
-4. ✅ Test note submission with images
+1. ✅ Create dev and prod storage in Vercel Dashboard
+2. ✅ Set up `.env.local` with `*_DEV` variables
+3. ✅ Run `npm run dev` - should see "DEV database" in logs
+4. ✅ Test submitting a note with images
 5. ✅ Deploy to Vercel
-6. ✅ Connect Postgres and Blob in Vercel Dashboard
-7. ✅ Redeploy and test in production
+6. ✅ Verify production uses prod database (check Vercel logs)
+
+You're all set! Happy developing with peace of mind. 🎉

@@ -1,14 +1,39 @@
-import { sql } from '@vercel/postgres';
+import { createPool, type VercelPool } from '@vercel/postgres';
 import { Note } from '@/types/note';
+import { getPostgresUrl, isDevelopment } from './db-config';
 
 /**
  * Storage layer using Vercel Postgres
  * This replaces the previous file-based storage which doesn't work on Vercel's serverless infrastructure
+ *
+ * Environment-aware: Automatically uses dev or prod database based on NODE_ENV
  */
+
+// Lazy pool creation - only create when actually needed
+let pool: VercelPool | null = null;
+
+function getPool(): VercelPool {
+  if (!pool) {
+    pool = createPool({
+      connectionString: getPostgresUrl(),
+    });
+  }
+  return pool;
+}
+
+// Helper to get SQL client
+function getSQL() {
+  return getPool().sql;
+}
 
 // Read all notes from database
 export async function readNotes(): Promise<Note[]> {
   try {
+    if (isDevelopment()) {
+      console.log('📊 Reading from DEV database');
+    }
+
+    const sql = getSQL();
     const { rows } = await sql<Note & { images: any }>`
       SELECT id, name, message, timestamp, images
       FROM notes
@@ -42,9 +67,14 @@ export async function addNote(
   };
 
   try {
+    if (isDevelopment()) {
+      console.log('📝 Writing to DEV database');
+    }
+
     // Store images as JSON string for compatibility
     const imagesJson = JSON.stringify(newNote.images || []);
 
+    const sql = getSQL();
     await sql`
       INSERT INTO notes (id, name, message, timestamp, images)
       VALUES (${newNote.id}, ${newNote.name}, ${newNote.message}, ${newNote.timestamp}, ${imagesJson}::jsonb)
@@ -60,6 +90,8 @@ export async function addNote(
 // Initialize database (create table if it doesn't exist)
 export async function initializeDatabase(): Promise<void> {
   try {
+    const sql = getSQL();
+
     await sql`
       CREATE TABLE IF NOT EXISTS notes (
         id VARCHAR(255) PRIMARY KEY,
