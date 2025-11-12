@@ -31,6 +31,15 @@ export default function ScrapbookPage() {
   const [authenticated, setAuthenticated] = useState(false);
   const [showPassword, setShowPassword] = useState(true);
 
+  // Check for stored admin session on mount
+  useEffect(() => {
+    const storedPassword = sessionStorage.getItem('adminPassword');
+    if (storedPassword) {
+      setLoading(true);
+      fetchNotes(storedPassword);
+    }
+  }, []);
+
   const fetchNotes = async (adminPassword: string) => {
     try {
       const response = await fetch('/api/notes', {
@@ -44,12 +53,17 @@ export default function ScrapbookPage() {
         setNotes(data.notes);
         setAuthenticated(true);
         setShowPassword(false);
+        // Store password in session for persistence
+        sessionStorage.setItem('adminPassword', adminPassword);
       } else {
         setError('Invalid password');
+        // Clear any stored password if authentication fails
+        sessionStorage.removeItem('adminPassword');
       }
     } catch (err) {
       setError('Failed to load notes');
       console.error(err);
+      sessionStorage.removeItem('adminPassword');
     } finally {
       setLoading(false);
     }
@@ -60,6 +74,14 @@ export default function ScrapbookPage() {
     setError('');
     setLoading(true);
     fetchNotes(password);
+  };
+
+  const handleLogout = () => {
+    sessionStorage.removeItem('adminPassword');
+    setAuthenticated(false);
+    setShowPassword(true);
+    setNotes([]);
+    setPassword('');
   };
 
   if (showPassword) {
@@ -118,6 +140,14 @@ export default function ScrapbookPage() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 p-8">
       <div className="max-w-7xl mx-auto">
+        <div className="flex justify-end mb-4">
+          <button
+            onClick={handleLogout}
+            className="bg-red-500 text-white font-semibold py-2 px-4 rounded-xl hover:bg-red-600 transition-all"
+          >
+            Logout 🚪
+          </button>
+        </div>
         <div className="text-center mb-12">
           <h1 className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 mb-4">
             Birthday Scrapbook 🎉

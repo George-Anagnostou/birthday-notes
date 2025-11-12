@@ -12,6 +12,15 @@ export default function PrintPage() {
   const [showPassword, setShowPassword] = useState(true);
   const [birthdayName, setBirthdayName] = useState('');
 
+  // Check for stored admin session on mount
+  useEffect(() => {
+    const storedPassword = sessionStorage.getItem('adminPassword');
+    if (storedPassword) {
+      setLoading(true);
+      fetchNotes(storedPassword);
+    }
+  }, []);
+
   const fetchNotes = async (adminPassword: string) => {
     try {
       const response = await fetch('/api/notes', {
@@ -25,14 +34,19 @@ export default function PrintPage() {
         setNotes(data.notes);
         setAuthenticated(true);
         setShowPassword(false);
+        // Store password in session for persistence
+        sessionStorage.setItem('adminPassword', adminPassword);
         // Try to get birthday name from env, default to "You"
         setBirthdayName(process.env.NEXT_PUBLIC_BIRTHDAY_NAME || 'You');
       } else {
         setError('Invalid password');
+        // Clear any stored password if authentication fails
+        sessionStorage.removeItem('adminPassword');
       }
     } catch (err) {
       setError('Failed to load notes');
       console.error(err);
+      sessionStorage.removeItem('adminPassword');
     } finally {
       setLoading(false);
     }
@@ -47,6 +61,14 @@ export default function PrintPage() {
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleLogout = () => {
+    sessionStorage.removeItem('adminPassword');
+    setAuthenticated(false);
+    setShowPassword(true);
+    setNotes([]);
+    setPassword('');
   };
 
   if (showPassword) {
@@ -147,6 +169,12 @@ export default function PrintPage() {
               >
                 Admin
               </a>
+              <button
+                onClick={handleLogout}
+                className="bg-red-500 text-white font-semibold py-2 px-4 rounded-xl hover:bg-red-600 transition-all"
+              >
+                Logout 🚪
+              </button>
             </div>
           </div>
         </div>
