@@ -4,6 +4,8 @@ import { buildCloudPrintRequest, sendCloudPrintRequest } from '@/lib/cloud-print
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 const CLOUD_PRINT_SERVICE_URL = process.env.CLOUD_PRINT_SERVICE_URL || '';
+const CLOUD_PRINT_API_KEY = process.env.CLOUD_PRINT_API_KEY;
+const CLOUD_PRINT_API_SECRET = process.env.CLOUD_PRINT_API_SECRET;
 
 /**
  * POST /api/cloud-print
@@ -78,7 +80,9 @@ export async function POST(request: NextRequest) {
     // Send request to cloud printing service
     const response = await sendCloudPrintRequest(
       cloudPrintRequest,
-      CLOUD_PRINT_SERVICE_URL
+      CLOUD_PRINT_SERVICE_URL,
+      CLOUD_PRINT_API_KEY,
+      CLOUD_PRINT_API_SECRET
     );
 
     // Get the PDF binary data
