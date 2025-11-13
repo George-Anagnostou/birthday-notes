@@ -143,14 +143,39 @@ export async function buildCloudPrintRequest(
  */
 export async function sendCloudPrintRequest(
   request: CloudPrintRequest,
-  cloudPrintServiceUrl: string
+  cloudPrintServiceUrl: string,
+  apiKey?: string,
+  apiSecret?: string
 ): Promise<Response> {
+  const body = JSON.stringify(request);
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+
+  // Add authentication headers if API key and secret are provided
+  if (apiKey && apiSecret) {
+    const crypto = require('crypto');
+    const timestamp = Math.floor(Date.now() / 1000).toString();
+
+    // Extract the path from the URL for signature generation
+    const url = new URL(cloudPrintServiceUrl);
+    const path = url.pathname;
+
+    // Generate HMAC signature
+    const message = `${timestamp}.POST.${path}.${body}`;
+    const signature = crypto.createHmac('sha256', apiSecret)
+      .update(message)
+      .digest('hex');
+
+    headers['X-API-Key'] = apiKey;
+    headers['X-Timestamp'] = timestamp;
+    headers['X-Signature'] = signature;
+  }
+
   const response = await fetch(cloudPrintServiceUrl, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(request),
+    headers,
+    body,
   });
 
   if (!response.ok) {
