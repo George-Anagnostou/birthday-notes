@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Note } from '@/types/note';
 import { renderMarkdown } from '@/lib/markdown';
+import { useCloudPrint } from '@/hooks/use-cloud-print';
 
 export default function PrintPage() {
   const [notes, setNotes] = useState<Note[]>([]);
@@ -12,6 +13,16 @@ export default function PrintPage() {
   const [authenticated, setAuthenticated] = useState(false);
   const [showPassword, setShowPassword] = useState(true);
   const [birthdayName, setBirthdayName] = useState('');
+
+  // Get stored admin password for cloud print
+  const storedPassword = typeof window !== 'undefined'
+    ? sessionStorage.getItem('adminPassword') || ''
+    : '';
+
+  // Cloud print hook
+  const { printCards: cloudPrintCards, isPrinting: isCloudPrinting, error: cloudPrintError } = useCloudPrint({
+    adminPassword: storedPassword,
+  });
 
   // Check for stored admin session on mount
   useEffect(() => {
@@ -62,6 +73,13 @@ export default function PrintPage() {
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleCloudPrint = async () => {
+    const result = await cloudPrintCards();
+    if (!result.success) {
+      alert(`Failed to generate PDF: ${result.error}`);
+    }
   };
 
   const handleLogout = () => {
@@ -254,6 +272,13 @@ export default function PrintPage() {
       `}</style>
 
       <main className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
+        {/* Error message for cloud print */}
+        {cloudPrintError && (
+          <div className="no-print fixed top-20 left-1/2 transform -translate-x-1/2 z-50 bg-red-500 text-white px-6 py-3 rounded-xl shadow-lg">
+            {cloudPrintError}
+          </div>
+        )}
+
         {/* Header - hidden in print */}
         <div className="no-print bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 text-white p-6 sticky top-0 z-50 shadow-lg">
           <div className="max-w-6xl mx-auto flex justify-between items-center">
@@ -265,10 +290,17 @@ export default function PrintPage() {
             </div>
             <div className="flex gap-3">
               <button
-                onClick={handlePrint}
-                className="bg-white text-purple-600 font-semibold py-2 px-6 rounded-xl hover:shadow-lg transition-all"
+                onClick={handleCloudPrint}
+                disabled={isCloudPrinting}
+                className="bg-white text-purple-600 font-semibold py-2 px-6 rounded-xl hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Print Cards 🖨️
+                {isCloudPrinting ? 'Generating PDF...' : 'Download PDF 📥'}
+              </button>
+              <button
+                onClick={handlePrint}
+                className="bg-white/20 text-white font-semibold py-2 px-6 rounded-xl hover:bg-white/30 transition-all"
+              >
+                Browser Print 🖨️
               </button>
               <a
                 href="/scrapbook"

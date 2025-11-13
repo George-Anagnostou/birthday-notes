@@ -1,6 +1,6 @@
 # Birthday Notes 🎂✨
 
-A beautiful, private website for collecting birthday wishes from friends and family. Features include password-protected access, a playful submission form, and two elegant presentation modes: a colorful scrapbook collage and printable letters.
+A private website for collecting birthday wishes from friends and family. Features include password-protected access, a easy submission form, and two elegant presentation modes: a colorful scrapbook collage and printable letters.
 
 ## Features
 
@@ -8,8 +8,8 @@ A beautiful, private website for collecting birthday wishes from friends and fam
 - 💌 **Easy Submission Form** - Simple interface for friends to share wishes
 - 🎨 **Scrapbook Visualization** - Colorful, playful collage of all messages
 - 🖨️ **Print-Ready Letters** - Beautiful formatted letters perfect for printing
+- ☁️ **Cloud Print Integration** - Professional PDF generation via cloud printing service
 - 📊 **Admin Dashboard** - View statistics and manage all messages
-- 🎀 **Feminine & Playful Design** - Soft colors and fun animations
 
 ## Getting Started
 
@@ -37,6 +37,7 @@ npm install
      - `ACCESS_CODE`: The code you'll share with contributors
      - `ADMIN_PASSWORD`: Your private admin password
      - `BIRTHDAY_NAME`: The birthday person's name
+     - `CLOUD_PRINT_SERVICE_URL`: (Optional) URL for cloud printing service
 
 ```bash
 cp .env.example .env.local
@@ -64,127 +65,9 @@ Access these special pages with your admin password:
 - **Admin Dashboard**: `/admin` - View all messages, statistics, and quick actions
 - **Scrapbook View**: `/scrapbook` - See all messages in a colorful collage
 - **Print View**: `/print` - View and print beautifully formatted letters
+- **Cloud Print API**: `/api/cloud-print` - Send cards to cloud printing service (see [CLOUD_PRINT_INTEGRATION.md](./CLOUD_PRINT_INTEGRATION.md))
 
-## Deployment on Vercel
-
-Vercel is the recommended platform for deploying this app. It's free and takes just a few minutes!
-
-### Step 1: Push to GitHub
-
-```bash
-git add .
-git commit -m "Initial commit"
-git push origin main
-```
-
-### Step 2: Deploy to Vercel
-
-1. Go to [vercel.com](https://vercel.com) and sign in
-2. Click "Add New Project"
-3. Import your GitHub repository
-4. Configure your project:
-   - **Framework Preset**: Next.js (auto-detected)
-   - **Root Directory**: `./`
-   - **Build Command**: `npm run build`
-   - **Output Directory**: `.next`
-
-### Step 3: Add Environment Variables
-
-In the Vercel project settings, add these environment variables:
-
-- `ACCESS_CODE`: Your chosen access code (e.g., "birthday2024")
-- `ADMIN_PASSWORD`: Your admin password (keep this secret!)
-- `BIRTHDAY_NAME`: The birthday person's name
-
-### Step 4: Deploy!
-
-Click "Deploy" and wait for the build to complete. Your site will be live at a Vercel URL!
-
-### Step 5: Add Custom Domain (Optional)
-
-If you have a domain:
-1. Go to your Vercel project settings
-2. Navigate to "Domains"
-3. Add your custom domain
-4. Follow the DNS configuration instructions
-
-## Self-Hosting
-
-If you prefer to self-host:
-
-1. Build the application:
-```bash
-npm run build
-```
-
-2. Start the production server:
-```bash
-npm start
-```
-
-The app will run on port 3000 by default.
-
-### Important Notes for Self-Hosting
-
-- Make sure the `data/` directory is writable
-- Notes are stored in `data/notes.json`
-- Consider backing up this file regularly
-- For production, use a process manager like PM2
-
-## File Storage
-
-By default, notes are stored in a JSON file (`data/notes.json`). This is simple and works great for small to medium collections.
-
-For larger deployments or multiple instances, you may want to upgrade to a database like:
-- Vercel Postgres
-- MongoDB
-- PostgreSQL
-- MySQL
-
-The storage logic is contained in `lib/storage.ts` for easy modification.
-
-## Customization
-
-### Changing Colors/Theme
-
-Edit the Tailwind classes in the component files:
-- Landing page: `app/page.tsx`
-- Submit form: `app/submit/page.tsx`
-- Scrapbook: `app/scrapbook/page.tsx`
-- Print view: `app/print/page.tsx`
-- Admin: `app/admin/page.tsx`
-
-### Modifying the Design
-
-The design uses Tailwind CSS with custom gradients. Main color palette:
-- Pink: `from-pink-500`
-- Purple: `via-purple-500`
-- Blue: `to-blue-500`
-
-## Security Notes
-
-- Change the default `ACCESS_CODE` and `ADMIN_PASSWORD` immediately
-- Don't commit your `.env.local` file to version control
-- Keep your admin password secure and unique
-- The access code can be shared with trusted friends and family
-
-## Troubleshooting
-
-### "Invalid access code"
-- Check that your `.env.local` file exists and has the correct `ACCESS_CODE`
-- Restart the development server after changing environment variables
-
-### Notes not appearing
-- Ensure the `data/` directory exists and is writable
-- Check browser console for any errors
-- Verify admin password is correct
-
-### Build fails on Vercel
-- Make sure all environment variables are set in Vercel
-- Check the build logs for specific errors
-- Ensure `package.json` dependencies are correct
-
-## Tech Stack
+ ## Tech Stack
 
 - **Framework**: Next.js 14 (App Router)
 - **Language**: TypeScript

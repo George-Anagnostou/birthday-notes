@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Note } from '@/types/note';
+import { useCloudPrint } from '@/hooks/use-cloud-print';
 
 export default function AdminPage() {
   const [notes, setNotes] = useState<Note[]>([]);
@@ -11,6 +12,16 @@ export default function AdminPage() {
   const [authenticated, setAuthenticated] = useState(false);
   const [showPassword, setShowPassword] = useState(true);
   const [copiedLink, setCopiedLink] = useState(false);
+
+  // Get stored admin password for cloud print
+  const storedPassword = typeof window !== 'undefined'
+    ? sessionStorage.getItem('adminPassword') || ''
+    : '';
+
+  // Cloud print hook
+  const { printCards: cloudPrintCards, isPrinting: isCloudPrinting, error: cloudPrintError } = useCloudPrint({
+    adminPassword: storedPassword,
+  });
 
   // Check for stored admin session on mount
   useEffect(() => {
@@ -70,6 +81,13 @@ export default function AdminPage() {
     navigator.clipboard.writeText(link);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);
+  };
+
+  const handleCloudPrint = async () => {
+    const result = await cloudPrintCards();
+    if (!result.success) {
+      alert(`Failed to generate PDF: ${result.error}`);
+    }
   };
 
   if (showPassword) {
@@ -133,6 +151,13 @@ export default function AdminPage() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 p-8">
+      {/* Error message for cloud print */}
+      {cloudPrintError && (
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 bg-red-500 text-white px-6 py-3 rounded-xl shadow-lg max-w-md">
+          {cloudPrintError}
+        </div>
+      )}
+
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
@@ -179,9 +204,16 @@ export default function AdminPage() {
             >
               {copiedLink ? 'Link Copied! ✓' : 'Copy Invite Link 🔗'}
             </button>
+            <button
+              onClick={handleCloudPrint}
+              disabled={isCloudPrinting}
+              className="bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold py-2 px-6 rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isCloudPrinting ? 'Generating PDF...' : 'Download PDF 📥'}
+            </button>
             <a
               href="/scrapbook"
-              className="bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold py-2 px-6 rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-200 inline-block"
+              className="bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold py-2 px-6 rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-200 inline-block"
             >
               View Scrapbook 📔
             </a>
@@ -189,7 +221,7 @@ export default function AdminPage() {
               href="/print"
               className="bg-gradient-to-r from-blue-500 to-pink-500 text-white font-semibold py-2 px-6 rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-200 inline-block"
             >
-              Print Letters 🖨️
+              Print Preview 🖨️
             </a>
           </div>
         </div>
