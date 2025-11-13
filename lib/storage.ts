@@ -38,10 +38,6 @@ export async function readNotes(): Promise<Note[]> {
   try {
     await ensureInitialized();
 
-    if (isDevelopment()) {
-      console.log('📊 Reading from DEV database');
-    }
-
     const sql = getSQL();
     const rows = await sql<(Note & { images: any })[]>`
       SELECT id, name, message, timestamp, images
@@ -50,8 +46,10 @@ export async function readNotes(): Promise<Note[]> {
     `;
 
     // Parse images from JSON and ensure it's always an array
+    // Also ensure timestamp is a number (Postgres BIGINT can be returned as string)
     return rows.map(row => ({
       ...row,
+      timestamp: typeof row.timestamp === 'string' ? parseInt(row.timestamp, 10) : row.timestamp,
       images: row.images ? (typeof row.images === 'string' ? JSON.parse(row.images) : row.images) : [],
     }));
   } catch (error) {
@@ -77,10 +75,6 @@ export async function addNote(
 
   try {
     await ensureInitialized();
-
-    if (isDevelopment()) {
-      console.log('📝 Writing to DEV database');
-    }
 
     // Store images as JSON string for compatibility
     const imagesJson = JSON.stringify(newNote.images || []);
