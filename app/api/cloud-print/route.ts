@@ -7,6 +7,7 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 const CLOUD_PRINT_SERVICE_URL = process.env.CLOUD_PRINT_SERVICE_URL || '';
 const CLOUD_PRINT_API_KEY = process.env.CLOUD_PRINT_API_KEY;
 const CLOUD_PRINT_API_SECRET = process.env.CLOUD_PRINT_API_SECRET;
+const BIRTHDAY_NAME = process.env.BIRTHDAY_NAME;
 
 /**
  * POST /api/cloud-print
@@ -76,6 +77,7 @@ export async function POST(request: NextRequest) {
     const cloudPrintRequest = await buildCloudPrintRequest(notesToPrint, {
       encodeImages,
       requestedBy: 'admin', // Could be enhanced to include actual admin user info
+      birthdayName: BIRTHDAY_NAME,
     });
 
     // Send request to cloud printing service

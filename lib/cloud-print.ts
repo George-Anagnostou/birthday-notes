@@ -110,11 +110,13 @@ export async function buildCloudPrintRequest(
   options: {
     encodeImages?: boolean;
     requestedBy?: string;
+    birthdayName?: string;
   } = {}
 ): Promise<CloudPrintRequest> {
   const {
     encodeImages = false,
     requestedBy,
+    birthdayName,
   } = options;
 
   // Convert notes to card data
@@ -135,6 +137,7 @@ export async function buildCloudPrintRequest(
   return {
     cards,
     metadata,
+    birthdayName,
   };
 }
 

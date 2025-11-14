@@ -72,4 +72,7 @@ export interface CloudPrintRequest {
 
   /** Request metadata */
   metadata: CloudPrintMetadata;
+
+  /** Name of the birthday person (optional) */
+  birthdayName?: string;
 }
