@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,7 +12,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ valid: false }, { status: 401 });
     }
   } catch (error) {
-    console.error('Error verifying access:', error);
+    logger.error('Error verifying access:', error);
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
   }
 }

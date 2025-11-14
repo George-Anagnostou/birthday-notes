@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { initializeDatabase } from '@/lib/storage';
+import { logger } from '@/lib/logger';
 
 /**
  * Debug endpoint to manually initialize the database
@@ -15,14 +16,14 @@ export async function GET() {
   }
 
   try {
-    console.log('🔧 Manually initializing database...');
+    logger.info('🔧 Manually initializing database...');
     await initializeDatabase();
     return NextResponse.json({
       success: true,
       message: 'Database initialized successfully!',
     });
   } catch (error) {
-    console.error('❌ Error initializing database:', error);
+    logger.error('❌ Error initializing database:', error);
     return NextResponse.json(
       {
         success: false,

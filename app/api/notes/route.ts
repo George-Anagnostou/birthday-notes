@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { addNote, readNotes } from '@/lib/storage';
+import { logger } from '@/lib/logger';
 
 // POST - Add a new note
 export async function POST(request: NextRequest) {
@@ -53,7 +54,7 @@ export async function POST(request: NextRequest) {
     const note = await addNote(name.trim(), message.trim(), imageUrls);
     return NextResponse.json({ success: true, note });
   } catch (error) {
-    console.error('Error adding note:', error);
+    logger.error('Error adding note:', error);
     return NextResponse.json(
       { error: 'Failed to save note' },
       { status: 500 }
@@ -74,7 +75,7 @@ export async function GET(request: NextRequest) {
     const notes = await readNotes();
     return NextResponse.json({ notes });
   } catch (error) {
-    console.error('Error fetching notes:', error);
+    logger.error('Error fetching notes:', error);
     return NextResponse.json(
       { error: 'Failed to fetch notes' },
       { status: 500 }

@@ -6,6 +6,8 @@
  * Production: Uses standard environment variables (auto-injected by Vercel)
  */
 
+import { logger } from './logger';
+
 export function isDevelopment(): boolean {
   return process.env.NODE_ENV === 'development';
 }
@@ -16,7 +18,7 @@ export function getPostgresUrl(): string {
   if (isDev) {
     const devUrl = process.env.POSTGRES_URL_DEV;
     if (!devUrl) {
-      console.warn('⚠️  POSTGRES_URL_DEV not found. Falling back to POSTGRES_URL.');
+      logger.warn('⚠️  POSTGRES_URL_DEV not found. Falling back to POSTGRES_URL.');
       return process.env.POSTGRES_URL || '';
     }
     return devUrl;
@@ -32,7 +34,7 @@ export function getBlobToken(): string {
   if (isDev) {
     const devToken = process.env.BLOB_READ_WRITE_TOKEN_DEV;
     if (!devToken) {
-      console.warn('⚠️  BLOB_READ_WRITE_TOKEN_DEV not found. Falling back to BLOB_READ_WRITE_TOKEN.');
+      logger.warn('⚠️  BLOB_READ_WRITE_TOKEN_DEV not found. Falling back to BLOB_READ_WRITE_TOKEN.');
       return process.env.BLOB_READ_WRITE_TOKEN || '';
     }
     return devToken;

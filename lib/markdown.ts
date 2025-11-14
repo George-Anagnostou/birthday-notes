@@ -1,4 +1,5 @@
 import { marked } from 'marked';
+import { logger } from './logger';
 
 /**
  * Configure marked with basic settings for security and simplicity
@@ -55,7 +56,7 @@ export function renderMarkdown(markdown: string): string {
 
     return sanitized;
   } catch (error) {
-    console.error('Error parsing markdown:', error);
+    logger.error('Error parsing markdown:', error);
     // Fallback to plain text if parsing fails
     return markdown;
   }

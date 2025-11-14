@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Note } from '@/types/note';
 import { renderMarkdown } from '@/lib/markdown';
+import { logger } from '@/lib/logger';
 
 const colors = [
   'bg-pink-200',
@@ -63,7 +64,7 @@ export default function ScrapbookPage() {
       }
     } catch (err) {
       setError('Failed to load notes');
-      console.error(err);
+      logger.error(err);
       sessionStorage.removeItem('adminPassword');
     } finally {
       setLoading(false);

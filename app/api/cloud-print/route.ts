@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { readNotes } from '@/lib/storage';
 import { buildCloudPrintRequest, sendCloudPrintRequest } from '@/lib/cloud-print';
+import { logger } from '@/lib/logger';
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 const CLOUD_PRINT_SERVICE_URL = process.env.CLOUD_PRINT_SERVICE_URL || '';
@@ -107,7 +108,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Cloud print error:', error);
+    logger.error('Cloud print error:', error);
     return NextResponse.json(
       {
         error: 'Failed to process cloud print request',
