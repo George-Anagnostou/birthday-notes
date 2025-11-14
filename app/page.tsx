@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { logger } from '@/lib/logger';
 
 export default function Home() {
   const [code, setCode] = useState('');
@@ -30,7 +31,7 @@ export default function Home() {
       }
     } catch (err) {
       setError('Something went wrong. Please try again.');
-      console.error(err);
+      logger.error(err);
     } finally {
       setLoading(false);
     }

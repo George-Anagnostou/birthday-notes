@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { put } from '@vercel/blob';
 import { getBlobToken, isDevelopment } from '@/lib/db-config';
+import { logger } from '@/lib/logger';
 
 /**
  * API route for uploading images to Vercel Blob
@@ -16,7 +17,7 @@ const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'ima
 export async function POST(request: NextRequest) {
   try {
     if (isDevelopment()) {
-      console.log('📸 Uploading to DEV blob storage');
+      logger.debug('📸 Uploading to DEV blob storage');
     }
 
     const formData = await request.formData();
@@ -89,7 +90,7 @@ export async function POST(request: NextRequest) {
       urls: uploadedUrls,
     });
   } catch (error) {
-    console.error('Error uploading images:', error);
+    logger.error('Error uploading images:', error);
     return NextResponse.json(
       { error: 'Failed to upload images' },
       { status: 500 }

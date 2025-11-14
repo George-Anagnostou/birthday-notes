@@ -1,6 +1,7 @@
 import postgres from 'postgres';
 import { Note } from '@/types/note';
 import { getPostgresUrl, isDevelopment } from './db-config';
+import { logger } from './logger';
 
 /**
  * Storage layer using Vercel Postgres
@@ -53,7 +54,7 @@ export async function readNotes(): Promise<Note[]> {
       images: row.images ? (typeof row.images === 'string' ? JSON.parse(row.images) : row.images) : [],
     }));
   } catch (error) {
-    console.error('Error reading notes:', error);
+    logger.error('Error reading notes:', error);
     // If table doesn't exist yet, return empty array
     return [];
   }
@@ -87,7 +88,7 @@ export async function addNote(
 
     return newNote;
   } catch (error) {
-    console.error('Error adding note:', error);
+    logger.error('Error adding note:', error);
     throw error;
   }
 }
@@ -112,9 +113,9 @@ export async function initializeDatabase(): Promise<void> {
       CREATE INDEX IF NOT EXISTS idx_notes_timestamp ON notes(timestamp DESC)
     `;
 
-    console.log('Database initialized successfully');
+    logger.info('Database initialized successfully');
   } catch (error) {
-    console.error('Error initializing database:', error);
+    logger.error('Error initializing database:', error);
     throw error;
   }
 }

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { renderMarkdown } from '@/lib/markdown';
+import { logger } from '@/lib/logger';
 
 export default function SubmitPage() {
   const [name, setName] = useState('');
@@ -119,7 +120,7 @@ export default function SubmitPage() {
       }
     } catch (err) {
       setError('Something went wrong. Please try again.');
-      console.error(err);
+      logger.error(err);
     } finally {
       setLoading(false);
     }

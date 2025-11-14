@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Note } from '@/types/note';
 import { renderMarkdown } from '@/lib/markdown';
 import { useCloudPrint } from '@/hooks/use-cloud-print';
+import { logger } from '@/lib/logger';
 
 export default function PrintPage() {
   const [notes, setNotes] = useState<Note[]>([]);
@@ -57,7 +58,7 @@ export default function PrintPage() {
       }
     } catch (err) {
       setError('Failed to load notes');
-      console.error(err);
+      logger.error(err);
       sessionStorage.removeItem('adminPassword');
     } finally {
       setLoading(false);

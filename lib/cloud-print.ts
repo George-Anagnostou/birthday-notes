@@ -5,6 +5,7 @@ import {
   PrintImage,
   CloudPrintMetadata,
 } from '@/types/cloud-print';
+import { logger } from './logger';
 
 /**
  * Generates a unique request ID
@@ -58,7 +59,7 @@ export async function prepareImages(
         mimeType: blob.type,
       });
     } catch (error) {
-      console.error(`Failed to fetch image ${url}:`, error);
+      logger.error(`Failed to fetch image ${url}:`, error);
       // Fall back to URL if fetch fails
       printImages.push({
         source: url,

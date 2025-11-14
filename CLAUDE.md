@@ -125,6 +125,20 @@ See `.env.example` for complete reference with descriptions.
 
 **Client components**: All pages use `'use client'` directive (no SSR for this app)
 
+**Logging**: Use `logger` from `lib/logger.ts` instead of `console` methods
+- `logger.debug()` - Development-only detailed debugging (hidden in production)
+- `logger.info()` - General informational messages (shown in all environments)
+- `logger.warn()` - Warning messages (shown in all environments)
+- `logger.error()` - Error messages (shown in all environments)
+
+Example:
+```typescript
+import { logger } from '@/lib/logger';
+
+logger.debug('📸 Uploading to DEV blob storage'); // Only in development
+logger.error('Error uploading images:', error);    // In all environments
+```
+
 ## Critical Implementation Notes
 
 ### No Migration System
