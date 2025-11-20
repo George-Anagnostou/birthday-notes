@@ -1,4 +1,5 @@
 import { marked } from 'marked';
+import DOMPurify from 'isomorphic-dompurify';
 import { logger } from './logger';
 
 /**
@@ -10,6 +11,7 @@ marked.setOptions({
 
 /**
  * Escape HTML entities to prevent XSS attacks
+ * Used as fallback when markdown parsing fails
  */
 function escapeHtml(text: string): string {
   const htmlEntities: Record<string, string> = {
@@ -23,69 +25,68 @@ function escapeHtml(text: string): string {
 }
 
 /**
- * Sanitize image tags to only allow safe attributes
- */
-function sanitizeImageTags(html: string): string {
-  return html.replace(/<img\b[^>]*>/gi, (match) => {
-    // Extract src and alt attributes only
-    const srcMatch = match.match(/src=["']([^"']*)["']/i);
-    const altMatch = match.match(/alt=["']([^"']*)["']/i);
-
-    const src = srcMatch ? srcMatch[1] : '';
-    const alt = altMatch ? altMatch[1] : '';
-
-    // Only allow http(s) URLs and data URLs
-    if (src && (src.startsWith('http://') || src.startsWith('https://') || src.startsWith('data:'))) {
-      // Escape the alt attribute to prevent XSS
-      return `<img src="${src}" alt="${escapeHtml(alt)}" class="birthday-card-image" />`;
-    }
-
-    // If invalid src, return empty string
-    return '';
-  });
-}
-
-/**
- * Converts markdown text to sanitized HTML
+ * Converts markdown text to sanitized HTML using DOMPurify
+ *
+ * Uses industry-standard DOMPurify library for comprehensive XSS protection.
  * Supports basic markdown features: headings, lists, bold, italic, images
  * Does not support: tables, links, or advanced features
  *
  * @param markdown - The markdown text to convert
- * @returns HTML string (sanitized)
+ * @returns HTML string (sanitized with DOMPurify)
+ *
+ * @example
+ * ```typescript
+ * const html = renderMarkdown('**Hello** _world_!');
+ * // Returns: '<p><strong>Hello</strong> <em>world</em>!</p>'
+ * ```
  */
 export function renderMarkdown(markdown: string): string {
   if (!markdown) return '';
 
   try {
-    // Parse the markdown
+    // Parse the markdown to HTML
     const html = marked.parse(markdown, { async: false }) as string;
 
-    // Sanitize images (allow but restrict attributes)
-    const withSafeImages = sanitizeImageTags(html);
+    // Sanitize with DOMPurify
+    const sanitized = DOMPurify.sanitize(html, {
+      // Allowed HTML tags
+      ALLOWED_TAGS: [
+        // Headings
+        'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+        // Paragraphs and line breaks
+        'p', 'br',
+        // Text formatting
+        'strong', 'em', 'b', 'i', 'u', 'del', 'code', 'pre',
+        // Lists
+        'ul', 'ol', 'li',
+        // Images (but not links or tables)
+        'img',
+        // Block quotes
+        'blockquote',
+        // Horizontal rules
+        'hr',
+      ],
+      // Allowed attributes (very restrictive)
+      ALLOWED_ATTR: [
+        'src',   // For images
+        'alt',   // For image alt text
+        'class', // For styling
+      ],
+      // Additional security options
+      ALLOW_DATA_ATTR: false,           // No data-* attributes
+      ALLOW_UNKNOWN_PROTOCOLS: false,   // Only http(s), data: protocols
+      ALLOWED_URI_REGEXP: /^(?:(?:(?:f|ht)tps?|data):)/i, // Only http(s) and data: URIs
+      KEEP_CONTENT: true,                // Keep content of removed tags
+      RETURN_TRUSTED_TYPE: false,        // Return string, not TrustedHTML
+    });
 
-    // Remove potentially dangerous tags and attributes
-    const sanitized = withSafeImages
-      // Remove links
-      .replace(/<a\b[^>]*>/gi, '')
-      .replace(/<\/a>/gi, '')
-      // Remove tables
-      .replace(/<table\b[^>]*>[\s\S]*?<\/table>/gi, '')
-      // Remove script tags and their contents
-      .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
-      // Remove style tags and their contents
-      .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '')
-      // Remove iframe, object, embed tags
-      .replace(/<iframe\b[^>]*>[\s\S]*?<\/iframe>/gi, '')
-      .replace(/<object\b[^>]*>[\s\S]*?<\/object>/gi, '')
-      .replace(/<embed\b[^>]*>/gi, '')
-      // Remove event handler attributes (onclick, onerror, onload, etc.)
-      .replace(/\s+on\w+\s*=\s*["'][^"']*["']/gi, '')
-      .replace(/\s+on\w+\s*=\s*[^\s>]*/gi, '')
-      // Remove javascript: protocol
-      .replace(/href\s*=\s*["']javascript:[^"']*["']/gi, '')
-      .replace(/src\s*=\s*["']javascript:[^"']*["']/gi, '');
+    // Add our custom class to images for consistent styling
+    const withStyledImages = sanitized.replace(
+      /<img\b/gi,
+      '<img class="birthday-card-image"'
+    );
 
-    return sanitized;
+    return withStyledImages;
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     logger.error('Error parsing markdown:', message);
