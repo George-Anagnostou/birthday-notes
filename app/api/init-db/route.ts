@@ -25,11 +25,18 @@ export async function GET() {
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     logger.error('❌ Error initializing database:', message);
+
+    // Only include stack trace in development (double-check even though endpoint is dev-only)
+    const isDevelopment = process.env.NODE_ENV === 'development';
+
     return NextResponse.json(
       {
         success: false,
         error: message,
-        details: error instanceof Error ? error.stack : 'Unknown error',
+        // Only expose stack traces in development for debugging
+        ...(isDevelopment && error instanceof Error && {
+          details: error.stack || 'No stack trace available',
+        }),
       },
       { status: 500 }
     );

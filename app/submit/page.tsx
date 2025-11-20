@@ -24,7 +24,7 @@ export default function SubmitPage() {
     }
   }, [router]);
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
 
     // Limit to 5 images
@@ -47,21 +47,52 @@ export default function SubmitPage() {
       validFiles.push(file);
     }
 
-    // Create previews
-    const newPreviews: string[] = [];
-    validFiles.forEach(file => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        newPreviews.push(reader.result as string);
-        if (newPreviews.length === validFiles.length) {
-          setImagePreviews([...imagePreviews, ...newPreviews]);
-        }
-      };
-      reader.readAsDataURL(file);
+    // Create previews with proper error handling
+    const previewPromises = validFiles.map(file => {
+      return new Promise<{ preview: string; file: File } | null>((resolve) => {
+        const reader = new FileReader();
+
+        reader.onloadend = () => {
+          resolve({ preview: reader.result as string, file });
+        };
+
+        reader.onerror = () => {
+          logger.error(`Failed to read file: ${file.name}`, reader.error);
+          // Resolve with null instead of rejecting to continue processing other files
+          resolve(null);
+        };
+
+        reader.readAsDataURL(file);
+      });
     });
 
-    setSelectedImages([...selectedImages, ...validFiles]);
-    setError('');
+    // Wait for all previews to load
+    const results = await Promise.all(previewPromises);
+
+    // Filter out failed reads
+    const successfulPreviews: string[] = [];
+    const successfulFiles: File[] = [];
+    const failedFiles: string[] = [];
+
+    results.forEach((result) => {
+      if (result) {
+        successfulPreviews.push(result.preview);
+        successfulFiles.push(result.file);
+      } else {
+        // This shouldn't happen often, but handle gracefully
+        failedFiles.push('Unknown file');
+      }
+    });
+
+    setImagePreviews([...imagePreviews, ...successfulPreviews]);
+    setSelectedImages([...selectedImages, ...successfulFiles]);
+
+    // Inform user if any files failed
+    if (failedFiles.length > 0) {
+      setError(`Some files could not be previewed. ${successfulFiles.length} of ${validFiles.length} images loaded successfully.`);
+    } else {
+      setError('');
+    }
   };
 
   const removeImage = (index: number) => {
