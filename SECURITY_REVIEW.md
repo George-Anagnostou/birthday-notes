@@ -3,16 +3,19 @@
 ## Review Date
 November 20, 2025
 
+## Last Updated
+November 20, 2025 - Option B Quick Wins Complete
+
 ## Review Summary
 - **Total Issues Found:** 44 issues across 2 review passes
-- **Issues Fixed:** 20 issues
-- **Issues Remaining:** 24 issues
-- **Files Modified:** 19 files
-- **New Files Created:** 2 files
+- **Issues Fixed:** 24 issues ✅ (+4 from Option B)
+- **Issues Remaining:** 20 issues ⏳ (-4 from Option B)
+- **Files Modified:** 22 files
+- **New Files Created:** 3 files (auth-utils, use-admin-auth, fetch-utils)
 
 ---
 
-## ✅ COMPLETED FIXES (20 Issues)
+## ✅ COMPLETED FIXES (24 Issues)
 
 ### Pass 1 - Initial Review (13 Fixed)
 
@@ -114,9 +117,46 @@ November 20, 2025
 
 19-20. ✅ **Removed unnecessary typeof window checks** (covered by #9 above)
 
+### Option B - Quick Wins (4 Fixed)
+
+#### High Priority Security & Stability (4)
+21. ✅ **DOMPurify Integration for Markdown Sanitization**
+   - File: `lib/markdown.ts`
+   - Fixed: Replaced 60+ lines of regex patterns with industry-standard DOMPurify library
+   - Implementation:
+     - Installed `isomorphic-dompurify` and `@types/dompurify`
+     - Configured strict whitelist of HTML tags and attributes
+     - Blocks all SVG elements, event handlers, and unknown protocols
+     - Only allows http(s) and data: URIs for images
+   - Impact: Comprehensive XSS protection with minimal code maintenance
+
+22. ✅ **Fetch Timeouts for External Requests**
+   - Files: Created `lib/fetch-utils.ts`, updated `lib/cloud-print.ts`, `hooks/use-cloud-print.ts`
+   - Fixed: Implemented `fetchWithTimeout()` and `fetchWithRetry()` utilities using AbortController
+   - Timeouts configured:
+     - Image fetching: 10 seconds
+     - PDF service requests: 60 seconds
+     - Client-side PDF download: 90 seconds
+   - Impact: Prevents indefinite hangs on slow/malicious servers, improves UX, prevents serverless timeout waste
+
+23. ✅ **Stack Trace Exposure Protection**
+   - File: `app/api/init-db/route.ts:32`
+   - Fixed: Added environment check before exposing stack traces
+   - Implementation: Only returns `error.stack` when `NODE_ENV === 'development'`
+   - Impact: Defense-in-depth against information leakage in production
+
+24. ✅ **FileReader Error Handlers**
+   - File: `app/submit/page.tsx:53-61`
+   - Fixed: Added `onerror` handlers to all FileReader instances
+   - Additional improvements:
+     - Changed from `forEach` to `Promise.all` approach (fixes race condition)
+     - Made `handleImageSelect` async for proper error handling
+     - Graceful degradation with user feedback on preview failures
+   - Impact: Users are informed of file read failures instead of silent errors
+
 ---
 
-## ⏳ REMAINING ISSUES (24 Tasks)
+## ⏳ REMAINING ISSUES (20 Tasks)
 
 ### 🔴 CRITICAL PRIORITY (Must Fix Before Production)
 
@@ -140,56 +180,6 @@ November 20, 2025
 
 ### ⚠️ HIGH PRIORITY (Fix Soon)
 
-#### TASK 2: Replace Regex Sanitization with DOMPurify
-- **Severity:** HIGH
-- **File:** `lib/markdown.ts`
-- **Issue:** Current regex-based sanitization incomplete; SVG elements with event handlers bypass filters
-- **Attack Example:** `<svg onload="alert('xss')">`
-- **Suggested Fix:**
-  ```bash
-  npm install dompurify isomorphic-dompurify
-  npm install --save-dev @types/dompurify
-  ```
-  ```typescript
-  import DOMPurify from 'isomorphic-dompurify';
-
-  export function renderMarkdown(markdown: string): string {
-    const html = marked.parse(markdown, { async: false }) as string;
-    return DOMPurify.sanitize(html, {
-      ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'img'],
-      ALLOWED_ATTR: ['src', 'alt', 'class'],
-    });
-  }
-  ```
-
-#### TASK 3: Add Fetch Timeouts
-- **Severity:** HIGH
-- **Files:**
-  - `lib/cloud-print.ts:52` (image fetching)
-  - `hooks/use-cloud-print.ts:16` (PDF generation)
-  - `app/submit/page.tsx:88` (note submission - check if needed)
-- **Issue:** fetch() calls can hang indefinitely on slow/malicious servers
-- **Impact:** DoS attacks, poor UX, serverless timeout waste
-- **Suggested Fix:**
-  ```typescript
-  async function fetchWithTimeout(url: string, timeout = 30000) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeout);
-
-    try {
-      const response = await fetch(url, { signal: controller.signal });
-      clearTimeout(timeoutId);
-      return response;
-    } catch (error) {
-      clearTimeout(timeoutId);
-      if (error.name === 'AbortError') {
-        throw new Error('Request timeout');
-      }
-      throw error;
-    }
-  }
-  ```
-
 #### TASK 4: Remove Credentials from SessionStorage
 - **Severity:** HIGH
 - **Files:** `app/page.tsx:27`, `hooks/use-admin-auth.ts:59`
@@ -201,37 +191,9 @@ November 20, 2025
   3. **Minimum:** Add warning in docs about XSS risks
 - **Notes:** This is an architecture change; may be lower priority if other XSS protections are solid
 
-#### TASK 5: Fix Stack Trace Exposure
-- **Severity:** HIGH (in production)
-- **File:** `app/api/init-db/route.ts:32`
-- **Issue:** Returns `error.stack` which leaks code structure
-- **Suggested Fix:** Already protected by development-only guard, but could improve:
-  ```typescript
-  // Only return stack in development
-  details: process.env.NODE_ENV === 'development'
-    ? (error instanceof Error ? error.stack : 'Unknown error')
-    : undefined,
-  ```
-
 ---
 
 ### 🔶 MEDIUM PRIORITY (Should Fix)
-
-#### TASK 6: Add FileReader Error Handlers
-- **Severity:** MEDIUM
-- **File:** `app/submit/page.tsx:53-61`
-- **Issue:** No `onerror` handler on FileReader; failed reads silently ignored
-- **Impact:** Users don't know which files failed to preview
-- **Suggested Fix:**
-  ```typescript
-  const reader = new FileReader();
-  reader.onloadend = () => { /* ... */ };
-  reader.onerror = () => {
-    logger.error(`Failed to read file: ${file.name}`);
-    setError(`Failed to preview ${file.name}`);
-  };
-  reader.readAsDataURL(file);
-  ```
 
 #### TASK 7: Validate Image URLs from Trusted Domain
 - **Severity:** MEDIUM
@@ -281,41 +243,27 @@ November 20, 2025
   }
   ```
 
-#### TASK 9: Add SVG Element Removal to Markdown
-- **Severity:** MEDIUM
+#### TASK 9: Add SVG Element Removal to Markdown (✅ COVERED BY FIX #21)
+- **Severity:** MEDIUM (NOW RESOLVED)
 - **File:** `lib/markdown.ts`
-- **Issue:** `<svg>`, `<animate>`, `<foreignObject>` tags not explicitly removed
-- **Impact:** Potential XSS vector
-- **Suggested Fix:** (Will be covered by TASK 2 DOMPurify)
-  ```typescript
-  .replace(/<svg\b[^>]*>[\s\S]*?<\/svg>/gi, '')
-  .replace(/<math\b[^>]*>[\s\S]*?<\/math>/gi, '')
-  .replace(/<foreignObject\b[^>]*>[\s\S]*?<\/foreignObject>/gi, '')
-  ```
+- **Status:** Fixed by DOMPurify integration (Fix #21)
+- **Note:** DOMPurify blocks all SVG elements by default unless explicitly whitelisted
 
-#### TASK 10: Fix Image Fetch Timeout in Cloud Print
-- **Severity:** MEDIUM
+#### TASK 10: Fix Image Fetch Timeout in Cloud Print (✅ COVERED BY FIX #22)
+- **Severity:** MEDIUM (NOW RESOLVED)
 - **File:** `lib/cloud-print.ts:52`
-- **Issue:** Fetching images has no timeout; slow images hang request
-- **Impact:** Cloud print can hang indefinitely
-- **Suggested Fix:** Use fetchWithTimeout from TASK 3
+- **Status:** Fixed by fetchWithTimeout implementation (Fix #22)
+- **Note:** 10-second timeout now applied to all image fetches
 
-#### TASK 11: Add Error Handling in Cloud Print Hook
-- **Severity:** MEDIUM
+#### TASK 11: Add Error Handling in Cloud Print Hook (✅ PARTIALLY COVERED BY FIX #22)
+- **Severity:** MEDIUM (MOSTLY RESOLVED)
 - **File:** `hooks/use-cloud-print.ts:35`
-- **Issue:** `await response.text()` not wrapped in try-catch
-- **Impact:** Could crash if response isn't valid text
-- **Suggested Fix:**
-  ```typescript
-  let errorMessage = 'Unknown error occurred';
-  try {
-    const errorData = await response.text();
-    errorMessage = errorData || 'Unknown error occurred';
-  } catch {
-    // If parsing fails, use default message
-  }
-  setError(errorMessage);
-  ```
+- **Status:** Error handling improved in Fix #22
+- **What was fixed:**
+  - Added try-catch around `response.text()`
+  - Added specific timeout error detection
+  - Improved user-facing error messages
+- **Note:** Primary error handling concern addressed
 
 ---
 
