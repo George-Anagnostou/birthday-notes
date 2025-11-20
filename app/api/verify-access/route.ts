@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { timingSafeEqual, isValidCredential } from '@/lib/auth-utils';
+import { withRateLimit } from '@/lib/rate-limit-middleware';
 
-export async function POST(request: NextRequest) {
+export const POST = withRateLimit(async (request: NextRequest) => {
   try {
     const { code } = await request.json();
     const correctCode = process.env.ACCESS_CODE;
@@ -25,4 +26,4 @@ export async function POST(request: NextRequest) {
     logger.error('Error verifying access:', message);
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
   }
-}
+}, 'AUTH_VERIFY');

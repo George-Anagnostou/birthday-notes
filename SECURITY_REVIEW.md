@@ -4,18 +4,18 @@
 November 20, 2025
 
 ## Last Updated
-November 20, 2025 - Option B Quick Wins Complete
+November 20, 2025 - Rate Limiting Implementation Complete
 
 ## Review Summary
 - **Total Issues Found:** 44 issues across 2 review passes
-- **Issues Fixed:** 24 issues ✅ (+4 from Option B)
-- **Issues Remaining:** 20 issues ⏳ (-4 from Option B)
-- **Files Modified:** 22 files
-- **New Files Created:** 3 files (auth-utils, use-admin-auth, fetch-utils)
+- **Issues Fixed:** 25 issues ✅ (+1 from Rate Limiting)
+- **Issues Remaining:** 19 issues ⏳ (-1 from Rate Limiting)
+- **Files Modified:** 27 files
+- **New Files Created:** 5 files (auth-utils, use-admin-auth, fetch-utils, rate-limit, rate-limit-middleware)
 
 ---
 
-## ✅ COMPLETED FIXES (24 Issues)
+## ✅ COMPLETED FIXES (25 Issues)
 
 ### Pass 1 - Initial Review (13 Fixed)
 
@@ -154,29 +154,37 @@ November 20, 2025 - Option B Quick Wins Complete
      - Graceful degradation with user feedback on preview failures
    - Impact: Users are informed of file read failures instead of silent errors
 
+### Rate Limiting Implementation (1 Fixed)
+
+#### Critical Security Fix (1)
+25. ✅ **Comprehensive Rate Limiting System**
+   - Files: Created `lib/rate-limit.ts`, `lib/rate-limit-middleware.ts`
+   - Modified: All 5 API routes (`verify-access`, `notes`, `cloud-print`)
+   - Fixed: Implemented dual-mode rate limiting (Upstash Redis + in-memory fallback)
+   - **Implementation details:**
+     - **Development**: Automatic in-memory rate limiting (no setup required)
+     - **Production**: Upstash Redis with graceful fallback
+     - **Protected endpoints:**
+       - `POST /api/verify-access`: 5 requests per 15 minutes (prevents brute force)
+       - `POST /api/notes`: 10 requests per minute (prevents spam)
+       - `GET /api/notes`: 20 requests per minute (admin data access)
+       - `POST /api/cloud-print`: 3 requests per hour (resource-intensive)
+       - `GET /api/cloud-print`: 10 requests per minute (config check)
+     - **Features:**
+       - IP-based tracking using `x-forwarded-for` header
+       - Standard rate limit headers (`X-RateLimit-*`, `Retry-After`)
+       - Automatic cleanup for in-memory store (prevents memory leaks)
+       - Logging for violations and warnings (< 20% remaining)
+       - Graceful degradation if rate limiter fails (doesn't break API)
+   - **Environment variables:**
+     - `UPSTASH_REDIS_REST_URL` (optional, for production)
+     - `UPSTASH_REDIS_REST_TOKEN` (optional, for production)
+   - **Impact:** Prevents brute force attacks, spam, and API abuse. Production-ready with free tier Upstash (10K requests/day).
+   - **Documentation:** See `CLAUDE.md` for setup guide and usage examples
+
 ---
 
-## ⏳ REMAINING ISSUES (20 Tasks)
-
-### 🔴 CRITICAL PRIORITY (Must Fix Before Production)
-
-#### TASK 1: Implement Rate Limiting
-- **Severity:** CRITICAL
-- **Files:** `/api/verify-access`, `/api/notes`, `/api/cloud-print`
-- **Issue:** Zero rate limiting allows unlimited brute force attacks on credentials
-- **Impact:** Attackers can try infinite password combinations
-- **Suggested Fix Options:**
-  1. Use Vercel Edge Config with custom middleware
-  2. Implement redis-based rate limiting (e.g., upstash)
-  3. Use third-party service (e.g., Arcjet, Unkey)
-  4. Add simple in-memory rate limiting with Map (serverless-compatible)
-- **Recommended Limits:**
-  - `/api/verify-access`: 5 attempts per 15 minutes per IP
-  - `/api/notes` GET: 10 requests per minute per IP
-  - `/api/cloud-print`: 3 requests per hour per authenticated user
-- **Notes:** Requires infrastructure setup, not just code changes
-
----
+## ⏳ REMAINING ISSUES (19 Tasks)
 
 ### ⚠️ HIGH PRIORITY (Fix Soon)
 

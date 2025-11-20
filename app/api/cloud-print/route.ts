@@ -3,6 +3,7 @@ import { readNotes } from '@/lib/storage';
 import { buildCloudPrintRequest, sendCloudPrintRequest } from '@/lib/cloud-print';
 import { logger } from '@/lib/logger';
 import { timingSafeEqual, isValidCredential } from '@/lib/auth-utils';
+import { withRateLimit } from '@/lib/rate-limit-middleware';
 
 const CLOUD_PRINT_SERVICE_URL = process.env.CLOUD_PRINT_SERVICE_URL || '';
 const CLOUD_PRINT_API_KEY = process.env.CLOUD_PRINT_API_KEY;
@@ -23,7 +24,7 @@ const CLOUD_PRINT_API_SECRET = process.env.CLOUD_PRINT_API_SECRET;
  * Headers:
  * - x-admin-password: Admin password for authentication
  */
-export async function POST(request: NextRequest) {
+export const POST = withRateLimit(async (request: NextRequest) => {
   // Verify admin authentication
   const adminPassword = request.headers.get('x-admin-password');
   const correctPassword = process.env.ADMIN_PASSWORD;
@@ -132,14 +133,14 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+}, 'CLOUD_PRINT');
 
 /**
  * GET /api/cloud-print
  *
  * Returns configuration info about cloud printing service
  */
-export async function GET(request: NextRequest) {
+export const GET = withRateLimit(async (request: NextRequest) => {
   // Verify admin authentication
   const adminPassword = request.headers.get('x-admin-password');
   const correctPassword = process.env.ADMIN_PASSWORD;
@@ -164,4 +165,4 @@ export async function GET(request: NextRequest) {
     serviceUrl: CLOUD_PRINT_SERVICE_URL ? '[CONFIGURED]' : null,
     status: CLOUD_PRINT_SERVICE_URL ? 'ready' : 'not configured',
   });
-}
+}, 'CLOUD_PRINT_CONFIG');

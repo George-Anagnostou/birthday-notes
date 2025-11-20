@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { addNote, readNotes } from '@/lib/storage';
 import { logger } from '@/lib/logger';
 import { timingSafeEqual, isValidCredential } from '@/lib/auth-utils';
+import { withRateLimit } from '@/lib/rate-limit-middleware';
 
 // POST - Add a new note
-export async function POST(request: NextRequest) {
+export const POST = withRateLimit(async (request: NextRequest) => {
   try {
     const { name, message, accessCode, images } = await request.json();
 
@@ -69,10 +70,10 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+}, 'NOTE_SUBMIT');
 
 // GET - Retrieve all notes (requires admin password)
-export async function GET(request: NextRequest) {
+export const GET = withRateLimit(async (request: NextRequest) => {
   try {
     const adminPassword = request.headers.get('x-admin-password');
     const correctPassword = process.env.ADMIN_PASSWORD;
@@ -99,4 +100,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+}, 'NOTE_VIEW');
