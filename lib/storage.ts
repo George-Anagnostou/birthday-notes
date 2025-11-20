@@ -12,7 +12,7 @@ import { logger } from './logger';
 
 // Lazy SQL client creation - only create when actually needed
 let sql: ReturnType<typeof postgres> | null = null;
-let isInitialized = false;
+let initPromise: Promise<void> | null = null;
 
 function getSQL() {
   if (!sql) {
@@ -27,11 +27,12 @@ function getSQL() {
 }
 
 // Auto-initialize database on first access
+// Uses promise-based singleton pattern to prevent race conditions
 async function ensureInitialized() {
-  if (!isInitialized) {
-    await initializeDatabase();
-    isInitialized = true;
+  if (!initPromise) {
+    initPromise = initializeDatabase();
   }
+  await initPromise;
 }
 
 // Read all notes from database

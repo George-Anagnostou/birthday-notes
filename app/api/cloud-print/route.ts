@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { readNotes } from '@/lib/storage';
 import { buildCloudPrintRequest, sendCloudPrintRequest } from '@/lib/cloud-print';
 import { logger } from '@/lib/logger';
+import { timingSafeEqual, isValidCredential } from '@/lib/auth-utils';
 
 const CLOUD_PRINT_SERVICE_URL = process.env.CLOUD_PRINT_SERVICE_URL || '';
 const CLOUD_PRINT_API_KEY = process.env.CLOUD_PRINT_API_KEY;
@@ -27,15 +28,15 @@ export async function POST(request: NextRequest) {
   const adminPassword = request.headers.get('x-admin-password');
   const correctPassword = process.env.ADMIN_PASSWORD;
 
-  if (!correctPassword) {
-    logger.error('ADMIN_PASSWORD environment variable is not set');
+  if (!correctPassword || !isValidCredential(correctPassword, 8)) {
+    logger.error('ADMIN_PASSWORD environment variable is not set or invalid');
     return NextResponse.json(
       { error: 'Server configuration error' },
       { status: 500 }
     );
   }
 
-  if (adminPassword !== correctPassword) {
+  if (!adminPassword || !timingSafeEqual(adminPassword, correctPassword)) {
     return NextResponse.json(
       { error: 'Unauthorized' },
       { status: 401 }
@@ -119,10 +120,14 @@ export async function POST(request: NextRequest) {
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     logger.error('Cloud print error:', message);
+
+    // Only expose error details in development
+    const isDevelopment = process.env.NODE_ENV !== 'production';
+
     return NextResponse.json(
       {
         error: 'Failed to process cloud print request',
-        details: message,
+        ...(isDevelopment && { details: message }),
       },
       { status: 500 }
     );
@@ -139,15 +144,15 @@ export async function GET(request: NextRequest) {
   const adminPassword = request.headers.get('x-admin-password');
   const correctPassword = process.env.ADMIN_PASSWORD;
 
-  if (!correctPassword) {
-    logger.error('ADMIN_PASSWORD environment variable is not set');
+  if (!correctPassword || !isValidCredential(correctPassword, 8)) {
+    logger.error('ADMIN_PASSWORD environment variable is not set or invalid');
     return NextResponse.json(
       { error: 'Server configuration error' },
       { status: 500 }
     );
   }
 
-  if (adminPassword !== correctPassword) {
+  if (!adminPassword || !timingSafeEqual(adminPassword, correctPassword)) {
     return NextResponse.json(
       { error: 'Unauthorized' },
       { status: 401 }

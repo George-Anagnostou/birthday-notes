@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { addNote, readNotes } from '@/lib/storage';
 import { logger } from '@/lib/logger';
+import { timingSafeEqual, isValidCredential } from '@/lib/auth-utils';
 
 // POST - Add a new note
 export async function POST(request: NextRequest) {
@@ -9,14 +10,14 @@ export async function POST(request: NextRequest) {
 
     // Verify access code
     const correctCode = process.env.ACCESS_CODE;
-    if (!correctCode) {
-      logger.error('ACCESS_CODE environment variable is not set');
+    if (!correctCode || !isValidCredential(correctCode, 4)) {
+      logger.error('ACCESS_CODE environment variable is not set or invalid');
       return NextResponse.json(
         { error: 'Server configuration error' },
         { status: 500 }
       );
     }
-    if (accessCode !== correctCode) {
+    if (!accessCode || !timingSafeEqual(accessCode, correctCode)) {
       return NextResponse.json({ error: 'Invalid access code' }, { status: 401 });
     }
 
@@ -76,15 +77,15 @@ export async function GET(request: NextRequest) {
     const adminPassword = request.headers.get('x-admin-password');
     const correctPassword = process.env.ADMIN_PASSWORD;
 
-    if (!correctPassword) {
-      logger.error('ADMIN_PASSWORD environment variable is not set');
+    if (!correctPassword || !isValidCredential(correctPassword, 8)) {
+      logger.error('ADMIN_PASSWORD environment variable is not set or invalid');
       return NextResponse.json(
         { error: 'Server configuration error' },
         { status: 500 }
       );
     }
 
-    if (adminPassword !== correctPassword) {
+    if (!adminPassword || !timingSafeEqual(adminPassword, correctPassword)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
