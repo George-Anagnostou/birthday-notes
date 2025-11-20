@@ -14,6 +14,15 @@ import { logger } from '@/lib/logger';
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
 
+// Map MIME types to safe file extensions
+const MIME_TO_EXTENSION: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/jpg': 'jpg',
+  'image/png': 'png',
+  'image/gif': 'gif',
+  'image/webp': 'webp',
+};
+
 export async function POST(request: NextRequest) {
   try {
     if (isDevelopment()) {
@@ -69,9 +78,10 @@ export async function POST(request: NextRequest) {
       }
 
       // Generate unique filename with environment prefix
+      // Use validated MIME type to determine extension (not user-supplied filename)
       const timestamp = Date.now();
       const randomString = Math.random().toString(36).substring(2, 9);
-      const extension = file.name.split('.').pop() || 'jpg';
+      const extension = MIME_TO_EXTENSION[file.type] || 'jpg';
       const envPrefix = isDevelopment() ? 'dev' : 'prod';
       const filename = `birthday-photos/${envPrefix}/${timestamp}-${randomString}.${extension}`;
 
@@ -89,8 +99,9 @@ export async function POST(request: NextRequest) {
       success: true,
       urls: uploadedUrls,
     });
-  } catch (error) {
-    logger.error('Error uploading images:', error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('Error uploading images:', message);
     return NextResponse.json(
       { error: 'Failed to upload images' },
       { status: 500 }

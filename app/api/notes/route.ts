@@ -8,7 +8,14 @@ export async function POST(request: NextRequest) {
     const { name, message, accessCode, images } = await request.json();
 
     // Verify access code
-    const correctCode = process.env.ACCESS_CODE || 'birthday2024';
+    const correctCode = process.env.ACCESS_CODE;
+    if (!correctCode) {
+      logger.error('ACCESS_CODE environment variable is not set');
+      return NextResponse.json(
+        { error: 'Server configuration error' },
+        { status: 500 }
+      );
+    }
     if (accessCode !== correctCode) {
       return NextResponse.json({ error: 'Invalid access code' }, { status: 401 });
     }
@@ -53,8 +60,9 @@ export async function POST(request: NextRequest) {
 
     const note = await addNote(name.trim(), message.trim(), imageUrls);
     return NextResponse.json({ success: true, note });
-  } catch (error) {
-    logger.error('Error adding note:', error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('Error adding note:', message);
     return NextResponse.json(
       { error: 'Failed to save note' },
       { status: 500 }
@@ -66,7 +74,15 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const adminPassword = request.headers.get('x-admin-password');
-    const correctPassword = process.env.ADMIN_PASSWORD || 'admin123';
+    const correctPassword = process.env.ADMIN_PASSWORD;
+
+    if (!correctPassword) {
+      logger.error('ADMIN_PASSWORD environment variable is not set');
+      return NextResponse.json(
+        { error: 'Server configuration error' },
+        { status: 500 }
+      );
+    }
 
     if (adminPassword !== correctPassword) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -74,8 +90,9 @@ export async function GET(request: NextRequest) {
 
     const notes = await readNotes();
     return NextResponse.json({ notes });
-  } catch (error) {
-    logger.error('Error fetching notes:', error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('Error fetching notes:', message);
     return NextResponse.json(
       { error: 'Failed to fetch notes' },
       { status: 500 }

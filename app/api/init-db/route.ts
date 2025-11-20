@@ -22,13 +22,14 @@ export async function GET() {
       success: true,
       message: 'Database initialized successfully!',
     });
-  } catch (error) {
-    logger.error('❌ Error initializing database:', error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('❌ Error initializing database:', message);
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        details: error,
+        error: message,
+        details: error instanceof Error ? error.stack : 'Unknown error',
       },
       { status: 500 }
     );

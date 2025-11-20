@@ -3,7 +3,6 @@ import { readNotes } from '@/lib/storage';
 import { buildCloudPrintRequest, sendCloudPrintRequest } from '@/lib/cloud-print';
 import { logger } from '@/lib/logger';
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 const CLOUD_PRINT_SERVICE_URL = process.env.CLOUD_PRINT_SERVICE_URL || '';
 const CLOUD_PRINT_API_KEY = process.env.CLOUD_PRINT_API_KEY;
 const CLOUD_PRINT_API_SECRET = process.env.CLOUD_PRINT_API_SECRET;
@@ -26,7 +25,17 @@ const CLOUD_PRINT_API_SECRET = process.env.CLOUD_PRINT_API_SECRET;
 export async function POST(request: NextRequest) {
   // Verify admin authentication
   const adminPassword = request.headers.get('x-admin-password');
-  if (adminPassword !== ADMIN_PASSWORD) {
+  const correctPassword = process.env.ADMIN_PASSWORD;
+
+  if (!correctPassword) {
+    logger.error('ADMIN_PASSWORD environment variable is not set');
+    return NextResponse.json(
+      { error: 'Server configuration error' },
+      { status: 500 }
+    );
+  }
+
+  if (adminPassword !== correctPassword) {
     return NextResponse.json(
       { error: 'Unauthorized' },
       { status: 401 }
@@ -107,12 +116,13 @@ export async function POST(request: NextRequest) {
       },
     });
 
-  } catch (error) {
-    logger.error('Cloud print error:', error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('Cloud print error:', message);
     return NextResponse.json(
       {
         error: 'Failed to process cloud print request',
-        details: error instanceof Error ? error.message : 'Unknown error',
+        details: message,
       },
       { status: 500 }
     );
@@ -127,7 +137,17 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   // Verify admin authentication
   const adminPassword = request.headers.get('x-admin-password');
-  if (adminPassword !== ADMIN_PASSWORD) {
+  const correctPassword = process.env.ADMIN_PASSWORD;
+
+  if (!correctPassword) {
+    logger.error('ADMIN_PASSWORD environment variable is not set');
+    return NextResponse.json(
+      { error: 'Server configuration error' },
+      { status: 500 }
+    );
+  }
+
+  if (adminPassword !== correctPassword) {
     return NextResponse.json(
       { error: 'Unauthorized' },
       { status: 401 }

@@ -9,6 +9,20 @@ marked.setOptions({
 });
 
 /**
+ * Escape HTML entities to prevent XSS attacks
+ */
+function escapeHtml(text: string): string {
+  const htmlEntities: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  };
+  return text.replace(/[&<>"']/g, (char) => htmlEntities[char]);
+}
+
+/**
  * Sanitize image tags to only allow safe attributes
  */
 function sanitizeImageTags(html: string): string {
@@ -22,7 +36,8 @@ function sanitizeImageTags(html: string): string {
 
     // Only allow http(s) URLs and data URLs
     if (src && (src.startsWith('http://') || src.startsWith('https://') || src.startsWith('data:'))) {
-      return `<img src="${src}" alt="${alt}" class="birthday-card-image" />`;
+      // Escape the alt attribute to prevent XSS
+      return `<img src="${src}" alt="${escapeHtml(alt)}" class="birthday-card-image" />`;
     }
 
     // If invalid src, return empty string
@@ -48,16 +63,33 @@ export function renderMarkdown(markdown: string): string {
     // Sanitize images (allow but restrict attributes)
     const withSafeImages = sanitizeImageTags(html);
 
-    // Remove potentially dangerous tags (links, tables, etc.)
+    // Remove potentially dangerous tags and attributes
     const sanitized = withSafeImages
+      // Remove links
       .replace(/<a\b[^>]*>/gi, '')
       .replace(/<\/a>/gi, '')
-      .replace(/<table\b[^>]*>[\s\S]*?<\/table>/gi, '');
+      // Remove tables
+      .replace(/<table\b[^>]*>[\s\S]*?<\/table>/gi, '')
+      // Remove script tags and their contents
+      .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
+      // Remove style tags and their contents
+      .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '')
+      // Remove iframe, object, embed tags
+      .replace(/<iframe\b[^>]*>[\s\S]*?<\/iframe>/gi, '')
+      .replace(/<object\b[^>]*>[\s\S]*?<\/object>/gi, '')
+      .replace(/<embed\b[^>]*>/gi, '')
+      // Remove event handler attributes (onclick, onerror, onload, etc.)
+      .replace(/\s+on\w+\s*=\s*["'][^"']*["']/gi, '')
+      .replace(/\s+on\w+\s*=\s*[^\s>]*/gi, '')
+      // Remove javascript: protocol
+      .replace(/href\s*=\s*["']javascript:[^"']*["']/gi, '')
+      .replace(/src\s*=\s*["']javascript:[^"']*["']/gi, '');
 
     return sanitized;
-  } catch (error) {
-    logger.error('Error parsing markdown:', error);
-    // Fallback to plain text if parsing fails
-    return markdown;
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('Error parsing markdown:', message);
+    // Fallback to escaped plain text if parsing fails to prevent XSS
+    return escapeHtml(markdown);
   }
 }

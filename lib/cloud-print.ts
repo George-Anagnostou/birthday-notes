@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { Note } from '@/types/note';
 import {
   CloudPrintRequest,
@@ -58,8 +59,9 @@ export async function prepareImages(
         originalUrl: url,
         mimeType: blob.type,
       });
-    } catch (error) {
-      logger.error(`Failed to fetch image ${url}:`, error);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      logger.error(`Failed to fetch image ${url}:`, message);
       // Fall back to URL if fetch fails
       printImages.push({
         source: url,
@@ -155,7 +157,6 @@ export async function sendCloudPrintRequest(
 
   // Add authentication headers if API key and secret are provided
   if (apiKey && apiSecret) {
-    const crypto = require('crypto');
     const timestamp = Math.floor(Date.now() / 1000).toString();
 
     // Extract the path from the URL for signature generation

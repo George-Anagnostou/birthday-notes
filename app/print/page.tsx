@@ -1,76 +1,38 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Note } from '@/types/note';
 import { renderMarkdown } from '@/lib/markdown';
+import { useAdminAuth } from '@/hooks/use-admin-auth';
 import { useCloudPrint } from '@/hooks/use-cloud-print';
-import { logger } from '@/lib/logger';
 
 export default function PrintPage() {
-  const [notes, setNotes] = useState<Note[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [password, setPassword] = useState('');
-  const [authenticated, setAuthenticated] = useState(false);
-  const [showPassword, setShowPassword] = useState(true);
   const [birthdayName, setBirthdayName] = useState('');
 
-  // Get stored admin password for cloud print
-  const storedPassword = typeof window !== 'undefined'
-    ? sessionStorage.getItem('adminPassword') || ''
-    : '';
+  // Admin authentication hook
+  const {
+    notes,
+    loading,
+    error,
+    password,
+    authenticated,
+    showPassword,
+    storedPassword,
+    setPassword,
+    handlePasswordSubmit,
+    handleLogout,
+  } = useAdminAuth();
 
   // Cloud print hook
   const { printCards: cloudPrintCards, isPrinting: isCloudPrinting, error: cloudPrintError } = useCloudPrint({
     adminPassword: storedPassword,
   });
 
-  // Check for stored admin session on mount
+  // Load birthday name after authentication
   useEffect(() => {
-    const storedPassword = sessionStorage.getItem('adminPassword');
-    if (storedPassword) {
-      setLoading(true);
-      fetchNotes(storedPassword);
+    if (authenticated) {
+      setBirthdayName(process.env.NEXT_PUBLIC_BIRTHDAY_NAME || 'You');
     }
-  }, []);
-
-  const fetchNotes = async (adminPassword: string) => {
-    try {
-      const response = await fetch('/api/notes', {
-        headers: {
-          'x-admin-password': adminPassword,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setNotes(data.notes);
-        setAuthenticated(true);
-        setShowPassword(false);
-        // Store password in session for persistence
-        sessionStorage.setItem('adminPassword', adminPassword);
-        // Try to get birthday name from env, default to "You"
-        setBirthdayName(process.env.NEXT_PUBLIC_BIRTHDAY_NAME || 'You');
-      } else {
-        setError('Invalid password');
-        // Clear any stored password if authentication fails
-        sessionStorage.removeItem('adminPassword');
-      }
-    } catch (err) {
-      setError('Failed to load notes');
-      logger.error(err);
-      sessionStorage.removeItem('adminPassword');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handlePasswordSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-    fetchNotes(password);
-  };
+  }, [authenticated]);
 
   const handlePrint = () => {
     window.print();
@@ -81,14 +43,6 @@ export default function PrintPage() {
     if (!result.success) {
       alert(`Failed to generate PDF: ${result.error}`);
     }
-  };
-
-  const handleLogout = () => {
-    sessionStorage.removeItem('adminPassword');
-    setAuthenticated(false);
-    setShowPassword(true);
-    setNotes([]);
-    setPassword('');
   };
 
   if (showPassword) {
