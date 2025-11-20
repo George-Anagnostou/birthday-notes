@@ -340,11 +340,13 @@ export default function PrintPage() {
                     {note.name}
                   </p>
                   <p className="text-xs text-gray-400 mt-1" style={{ fontFamily: "'Open Sans', sans-serif" }}>
-                    {new Date(Number(note.timestamp)).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                    })}
+                    {note.timestamp && !isNaN(Number(note.timestamp))
+                      ? new Date(Number(note.timestamp)).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                        })
+                      : 'Date unavailable'}
                   </p>
                   <div className="mt-4 flex justify-center gap-2 text-xl opacity-60">
                     💝 ✨ 🎂

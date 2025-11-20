@@ -170,7 +170,9 @@ export default function ScrapbookPage() {
                       </div>
                     )}
                     <div className="text-xs text-gray-600 mt-4">
-                      {new Date(Number(note.timestamp)).toLocaleDateString()}
+                      {note.timestamp && !isNaN(Number(note.timestamp))
+                        ? new Date(Number(note.timestamp)).toLocaleDateString()
+                        : 'Date unavailable'}
                     </div>
                   </div>
                 </div>
