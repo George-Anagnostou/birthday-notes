@@ -44,11 +44,28 @@ export function getBlobToken(): string {
   return process.env.BLOB_READ_WRITE_TOKEN || '';
 }
 
+export function getCloudPrintUrl(): string {
+  const isDev = isDevelopment();
+
+  if (isDev) {
+    const devUrl = process.env.CLOUD_PRINT_SERVICE_URL_DEV;
+    if (!devUrl) {
+      logger.warn('⚠️  CLOUD_PRINT_SERVICE_URL_DEV not found. Falling back to CLOUD_PRINT_SERVICE_URL.');
+      return process.env.CLOUD_PRINT_SERVICE_URL || '';
+    }
+    return devUrl;
+  }
+
+  // Production uses the standard URL
+  return process.env.CLOUD_PRINT_SERVICE_URL || '';
+}
+
 export function getEnvironmentInfo() {
   const isDev = isDevelopment();
   return {
     environment: isDev ? 'development' : 'production',
     postgresUrl: getPostgresUrl() ? '✅ Connected' : '❌ Not configured',
     blobToken: getBlobToken() ? '✅ Connected' : '❌ Not configured',
+    cloudPrintUrl: getCloudPrintUrl() ? '✅ Connected' : '❌ Not configured',
   };
 }
