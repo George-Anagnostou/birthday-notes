@@ -79,7 +79,9 @@ class InMemoryRateLimiter {
     const now = Date.now();
     let cleanedCount = 0;
 
-    for (const [key, value] of this.requests.entries()) {
+    // Convert entries to array to avoid iteration issues
+    const entries = Array.from(this.requests.entries());
+    for (const [key, value] of entries) {
       if (value.resetAt <= now) {
         this.requests.delete(key);
         cleanedCount++;
