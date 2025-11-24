@@ -14,11 +14,7 @@ export default function PrintPage() {
   const [authenticated, setAuthenticated] = useState(false);
   const [showPassword, setShowPassword] = useState(true);
   const [birthdayName, setBirthdayName] = useState('');
-
-  // Get stored admin password for cloud print
-  const storedPassword = typeof window !== 'undefined'
-    ? sessionStorage.getItem('adminPassword') || ''
-    : '';
+  const [storedPassword, setStoredPassword] = useState('');
 
   // Cloud print hook
   const { printCards: cloudPrintCards, isPrinting: isCloudPrinting, error: cloudPrintError } = useCloudPrint({
@@ -27,10 +23,11 @@ export default function PrintPage() {
 
   // Check for stored admin session on mount
   useEffect(() => {
-    const storedPassword = sessionStorage.getItem('adminPassword');
-    if (storedPassword) {
+    const sessionPassword = sessionStorage.getItem('adminPassword');
+    if (sessionPassword) {
+      setStoredPassword(sessionPassword);
       setLoading(true);
-      fetchNotes(storedPassword);
+      fetchNotes(sessionPassword);
     }
   }, []);
 
@@ -49,6 +46,7 @@ export default function PrintPage() {
         setShowPassword(false);
         // Store password in session for persistence
         sessionStorage.setItem('adminPassword', adminPassword);
+        setStoredPassword(adminPassword);
         // Try to get birthday name from env, default to "You"
         setBirthdayName(process.env.NEXT_PUBLIC_BIRTHDAY_NAME || 'You');
       } else {
@@ -85,6 +83,7 @@ export default function PrintPage() {
 
   const handleLogout = () => {
     sessionStorage.removeItem('adminPassword');
+    setStoredPassword('');
     setAuthenticated(false);
     setShowPassword(true);
     setNotes([]);

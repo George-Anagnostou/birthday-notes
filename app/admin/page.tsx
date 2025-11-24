@@ -13,11 +13,7 @@ export default function AdminPage() {
   const [authenticated, setAuthenticated] = useState(false);
   const [showPassword, setShowPassword] = useState(true);
   const [copiedLink, setCopiedLink] = useState(false);
-
-  // Get stored admin password for cloud print
-  const storedPassword = typeof window !== 'undefined'
-    ? sessionStorage.getItem('adminPassword') || ''
-    : '';
+  const [storedPassword, setStoredPassword] = useState('');
 
   // Cloud print hook
   const { printCards: cloudPrintCards, isPrinting: isCloudPrinting, error: cloudPrintError } = useCloudPrint({
@@ -26,10 +22,11 @@ export default function AdminPage() {
 
   // Check for stored admin session on mount
   useEffect(() => {
-    const storedPassword = sessionStorage.getItem('adminPassword');
-    if (storedPassword) {
+    const sessionPassword = sessionStorage.getItem('adminPassword');
+    if (sessionPassword) {
+      setStoredPassword(sessionPassword);
       setLoading(true);
-      fetchNotes(storedPassword);
+      fetchNotes(sessionPassword);
     }
   }, []);
 
@@ -48,6 +45,7 @@ export default function AdminPage() {
         setShowPassword(false);
         // Store password in session for persistence
         sessionStorage.setItem('adminPassword', adminPassword);
+        setStoredPassword(adminPassword);
       } else {
         setError('Invalid password');
         // Clear any stored password if authentication fails
@@ -71,6 +69,7 @@ export default function AdminPage() {
 
   const handleLogout = () => {
     sessionStorage.removeItem('adminPassword');
+    setStoredPassword('');
     setAuthenticated(false);
     setShowPassword(true);
     setNotes([]);
