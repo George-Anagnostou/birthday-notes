@@ -22,13 +22,21 @@ export async function GET() {
       success: true,
       message: 'Database initialized successfully!',
     });
-  } catch (error) {
-    logger.error('❌ Error initializing database:', error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('❌ Error initializing database:', message);
+
+    // Only include stack trace in development (double-check even though endpoint is dev-only)
+    const isDevelopment = process.env.NODE_ENV === 'development';
+
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        details: error,
+        error: message,
+        // Only expose stack traces in development for debugging
+        ...(isDevelopment && error instanceof Error && {
+          details: error.stack || 'No stack trace available',
+        }),
       },
       { status: 500 }
     );

@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { Note } from '@/types/note';
 import {
   CloudPrintRequest,
@@ -6,6 +7,7 @@ import {
   CloudPrintMetadata,
 } from '@/types/cloud-print';
 import { logger } from './logger';
+import { fetchWithTimeout, FetchTimeoutError } from './fetch-utils';
 
 /**
  * Generates a unique request ID
@@ -48,7 +50,8 @@ export async function prepareImages(
 
   for (const url of imageUrls) {
     try {
-      const response = await fetch(url);
+      // Fetch image with 10-second timeout to prevent hanging
+      const response = await fetchWithTimeout(url, {}, 10000);
       const blob = await response.blob();
       const base64 = await blobToBase64(blob);
 
@@ -58,9 +61,15 @@ export async function prepareImages(
         originalUrl: url,
         mimeType: blob.type,
       });
-    } catch (error) {
-      logger.error(`Failed to fetch image ${url}:`, error);
-      // Fall back to URL if fetch fails
+    } catch (error: unknown) {
+      // Provide specific error message for timeouts vs other failures
+      if (error instanceof FetchTimeoutError) {
+        logger.error(`Image fetch timeout for ${url}: ${error.message}`);
+      } else {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        logger.error(`Failed to fetch image ${url}:`, message);
+      }
+      // Fall back to URL if fetch fails or times out
       printImages.push({
         source: url,
         type: 'url',
@@ -158,7 +167,6 @@ export async function sendCloudPrintRequest(
 
   // Add authentication headers if API key and secret are provided
   if (apiKey && apiSecret) {
-    const crypto = require('crypto');
     const timestamp = Math.floor(Date.now() / 1000).toString();
 
     // Extract the path from the URL for signature generation
@@ -176,11 +184,16 @@ export async function sendCloudPrintRequest(
     headers['X-Signature'] = signature;
   }
 
-  const response = await fetch(cloudPrintServiceUrl, {
-    method: 'POST',
-    headers,
-    body,
-  });
+  // Fetch with 60-second timeout (PDF generation can be resource-intensive)
+  const response = await fetchWithTimeout(
+    cloudPrintServiceUrl,
+    {
+      method: 'POST',
+      headers,
+      body,
+    },
+    60000
+  );
 
   if (!response.ok) {
     // Try to get error message from response

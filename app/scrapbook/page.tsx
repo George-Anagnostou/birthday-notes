@@ -1,9 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Note } from '@/types/note';
+import { useAdminAuth } from '@/hooks/use-admin-auth';
 import { renderMarkdown } from '@/lib/markdown';
-import { logger } from '@/lib/logger';
 
 const colors = [
   'bg-pink-200',
@@ -26,65 +24,18 @@ const rotations = [
 ];
 
 export default function ScrapbookPage() {
-  const [notes, setNotes] = useState<Note[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [password, setPassword] = useState('');
-  const [authenticated, setAuthenticated] = useState(false);
-  const [showPassword, setShowPassword] = useState(true);
-
-  // Check for stored admin session on mount
-  useEffect(() => {
-    const storedPassword = sessionStorage.getItem('adminPassword');
-    if (storedPassword) {
-      setLoading(true);
-      fetchNotes(storedPassword);
-    }
-  }, []);
-
-  const fetchNotes = async (adminPassword: string) => {
-    try {
-      const response = await fetch('/api/notes', {
-        headers: {
-          'x-admin-password': adminPassword,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setNotes(data.notes);
-        setAuthenticated(true);
-        setShowPassword(false);
-        // Store password in session for persistence
-        sessionStorage.setItem('adminPassword', adminPassword);
-      } else {
-        setError('Invalid password');
-        // Clear any stored password if authentication fails
-        sessionStorage.removeItem('adminPassword');
-      }
-    } catch (err) {
-      setError('Failed to load notes');
-      logger.error(err);
-      sessionStorage.removeItem('adminPassword');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handlePasswordSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-    fetchNotes(password);
-  };
-
-  const handleLogout = () => {
-    sessionStorage.removeItem('adminPassword');
-    setAuthenticated(false);
-    setShowPassword(true);
-    setNotes([]);
-    setPassword('');
-  };
+  // Admin authentication hook
+  const {
+    notes,
+    loading,
+    error,
+    password,
+    authenticated,
+    showPassword,
+    setPassword,
+    handlePasswordSubmit,
+    handleLogout,
+  } = useAdminAuth();
 
   if (showPassword) {
     return (
@@ -219,7 +170,9 @@ export default function ScrapbookPage() {
                       </div>
                     )}
                     <div className="text-xs text-gray-600 mt-4">
-                      {new Date(Number(note.timestamp)).toLocaleDateString()}
+                      {note.timestamp && !isNaN(Number(note.timestamp))
+                        ? new Date(Number(note.timestamp)).toLocaleDateString()
+                        : 'Date unavailable'}
                     </div>
                   </div>
                 </div>

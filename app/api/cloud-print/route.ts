@@ -3,8 +3,9 @@ import { readNotes } from '@/lib/storage';
 import { buildCloudPrintRequest, sendCloudPrintRequest } from '@/lib/cloud-print';
 import { getCloudPrintUrl } from '@/lib/db-config';
 import { logger } from '@/lib/logger';
+import { timingSafeEqual, isValidCredential } from '@/lib/auth-utils';
+import { withRateLimit } from '@/lib/rate-limit-middleware';
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 const CLOUD_PRINT_API_KEY = process.env.CLOUD_PRINT_API_KEY;
 const CLOUD_PRINT_API_SECRET = process.env.CLOUD_PRINT_API_SECRET;
 const BIRTHDAY_NAME = process.env.BIRTHDAY_NAME;
@@ -24,10 +25,20 @@ const BIRTHDAY_NAME = process.env.BIRTHDAY_NAME;
  * Headers:
  * - x-admin-password: Admin password for authentication
  */
-export async function POST(request: NextRequest) {
+export const POST = withRateLimit(async (request: NextRequest) => {
   // Verify admin authentication
   const adminPassword = request.headers.get('x-admin-password');
-  if (adminPassword !== ADMIN_PASSWORD) {
+  const correctPassword = process.env.ADMIN_PASSWORD;
+
+  if (!correctPassword || !isValidCredential(correctPassword, 8)) {
+    logger.error('ADMIN_PASSWORD environment variable is not set or invalid');
+    return NextResponse.json(
+      { error: 'Server configuration error' },
+      { status: 500 }
+    );
+  }
+
+  if (!adminPassword || !timingSafeEqual(adminPassword, correctPassword)) {
     return NextResponse.json(
       { error: 'Unauthorized' },
       { status: 401 }
@@ -114,27 +125,42 @@ export async function POST(request: NextRequest) {
       },
     });
 
-  } catch (error) {
-    logger.error('Cloud print error:', error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('Cloud print error:', message);
+
+    // Only expose error details in development
+    const isDevelopment = process.env.NODE_ENV !== 'production';
+
     return NextResponse.json(
       {
         error: 'Failed to process cloud print request',
-        details: error instanceof Error ? error.message : 'Unknown error',
+        ...(isDevelopment && { details: message }),
       },
       { status: 500 }
     );
   }
-}
+}, 'CLOUD_PRINT');
 
 /**
  * GET /api/cloud-print
  *
  * Returns configuration info about cloud printing service
  */
-export async function GET(request: NextRequest) {
+export const GET = withRateLimit(async (request: NextRequest) => {
   // Verify admin authentication
   const adminPassword = request.headers.get('x-admin-password');
-  if (adminPassword !== ADMIN_PASSWORD) {
+  const correctPassword = process.env.ADMIN_PASSWORD;
+
+  if (!correctPassword || !isValidCredential(correctPassword, 8)) {
+    logger.error('ADMIN_PASSWORD environment variable is not set or invalid');
+    return NextResponse.json(
+      { error: 'Server configuration error' },
+      { status: 500 }
+    );
+  }
+
+  if (!adminPassword || !timingSafeEqual(adminPassword, correctPassword)) {
     return NextResponse.json(
       { error: 'Unauthorized' },
       { status: 401 }
@@ -148,4 +174,4 @@ export async function GET(request: NextRequest) {
     serviceUrl: cloudPrintServiceUrl ? '[CONFIGURED]' : null,
     status: cloudPrintServiceUrl ? 'ready' : 'not configured',
   });
-}
+}, 'CLOUD_PRINT_CONFIG');

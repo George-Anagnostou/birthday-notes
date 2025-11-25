@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { fetchWithTimeout, FetchTimeoutError } from '@/lib/fetch-utils';
 
 interface UseCloudPrintOptions {
   adminPassword: string;
@@ -13,17 +14,22 @@ export function useCloudPrint({ adminPassword }: UseCloudPrintOptions) {
     setError(null);
 
     try {
-      const response = await fetch('/api/cloud-print', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-admin-password': adminPassword,
+      // Fetch with 90-second timeout (PDF generation can take time)
+      const response = await fetchWithTimeout(
+        '/api/cloud-print',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-admin-password': adminPassword,
+          },
+          body: JSON.stringify({
+            // No noteIds means print all cards
+            encodeImages: false, // Use URLs by default
+          }),
         },
-        body: JSON.stringify({
-          // No noteIds means print all cards
-          encodeImages: false, // Use URLs by default
-        }),
-      });
+        90000
+      );
 
       if (!response.ok) {
         // Try to parse error message
@@ -32,8 +38,13 @@ export function useCloudPrint({ adminPassword }: UseCloudPrintOptions) {
           const errorData = await response.json();
           throw new Error(errorData.error || errorData.details || 'Failed to generate PDF');
         } else {
-          const errorText = await response.text();
-          throw new Error(errorText || `Server error: ${response.status}`);
+          // Wrap text parsing in try-catch to handle potential errors
+          try {
+            const errorText = await response.text();
+            throw new Error(errorText || `Server error: ${response.status}`);
+          } catch (parseError) {
+            throw new Error(`Server error: ${response.status}`);
+          }
         }
       }
 
@@ -65,8 +76,15 @@ export function useCloudPrint({ adminPassword }: UseCloudPrintOptions) {
       window.URL.revokeObjectURL(url);
 
       return { success: true };
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+    } catch (error: unknown) {
+      let errorMessage = 'Unknown error occurred';
+
+      if (error instanceof FetchTimeoutError) {
+        errorMessage = 'PDF generation timed out. Please try again with fewer notes or contact support.';
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
       setError(errorMessage);
       return { success: false, error: errorMessage };
     } finally {

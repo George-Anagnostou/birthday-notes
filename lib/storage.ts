@@ -12,7 +12,7 @@ import { logger } from './logger';
 
 // Lazy SQL client creation - only create when actually needed
 let sql: ReturnType<typeof postgres> | null = null;
-let isInitialized = false;
+let initPromise: Promise<void> | null = null;
 
 function getSQL() {
   if (!sql) {
@@ -27,11 +27,12 @@ function getSQL() {
 }
 
 // Auto-initialize database on first access
+// Uses promise-based singleton pattern to prevent race conditions
 async function ensureInitialized() {
-  if (!isInitialized) {
-    await initializeDatabase();
-    isInitialized = true;
+  if (!initPromise) {
+    initPromise = initializeDatabase();
   }
+  await initPromise;
 }
 
 // Read all notes from database
@@ -48,13 +49,31 @@ export async function readNotes(): Promise<Note[]> {
 
     // Parse images from JSON and ensure it's always an array
     // Also ensure timestamp is a number (Postgres BIGINT can be returned as string)
-    return rows.map(row => ({
-      ...row,
-      timestamp: typeof row.timestamp === 'string' ? parseInt(row.timestamp, 10) : row.timestamp,
-      images: row.images ? (typeof row.images === 'string' ? JSON.parse(row.images) : row.images) : [],
-    }));
-  } catch (error) {
-    logger.error('Error reading notes:', error);
+    return rows.map(row => {
+      let parsedImages: string[] = [];
+
+      if (row.images) {
+        if (typeof row.images === 'string') {
+          try {
+            parsedImages = JSON.parse(row.images);
+          } catch (error) {
+            logger.error(`Failed to parse images JSON for note ${row.id}:`, error);
+            parsedImages = [];
+          }
+        } else {
+          parsedImages = row.images;
+        }
+      }
+
+      return {
+        ...row,
+        timestamp: typeof row.timestamp === 'string' ? parseInt(row.timestamp, 10) : row.timestamp,
+        images: parsedImages,
+      };
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('Error reading notes:', message);
     // If table doesn't exist yet, return empty array
     return [];
   }
@@ -67,7 +86,7 @@ export async function addNote(
   images: string[] = []
 ): Promise<Note> {
   const newNote: Note = {
-    id: `note-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    id: `note-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
     name,
     message,
     timestamp: Date.now(),
@@ -87,8 +106,9 @@ export async function addNote(
     `;
 
     return newNote;
-  } catch (error) {
-    logger.error('Error adding note:', error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('Error adding note:', message);
     throw error;
   }
 }
@@ -114,8 +134,9 @@ export async function initializeDatabase(): Promise<void> {
     `;
 
     logger.info('Database initialized successfully');
-  } catch (error) {
-    logger.error('Error initializing database:', error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('Error initializing database:', message);
     throw error;
   }
 }

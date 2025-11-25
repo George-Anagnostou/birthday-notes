@@ -72,6 +72,53 @@ Headers: X-API-Key, X-Timestamp, X-Signature
 
 **Important**: Access code uses sessionStorage (NOT cookies). Code is re-verified in request body on each API call to `/api/notes`.
 
+### Rate Limiting
+
+**Key files**: `lib/rate-limit.ts`, `lib/rate-limit-middleware.ts`
+
+**Dual-mode implementation**:
+- **Development**: In-memory rate limiting (automatic, no setup required)
+- **Production**: Upstash Redis (recommended, requires free account)
+- **Fallback**: Gracefully falls back to in-memory if Redis unavailable
+
+**Protected endpoints**:
+```typescript
+POST /api/verify-access     → 5 requests per 15 minutes  (AUTH_VERIFY)
+POST /api/notes             → 10 requests per minute      (NOTE_SUBMIT)
+GET /api/notes              → 20 requests per minute      (NOTE_VIEW)
+POST /api/cloud-print       → 3 requests per hour         (CLOUD_PRINT)
+GET /api/cloud-print        → 10 requests per minute      (CLOUD_PRINT_CONFIG)
+```
+
+**How it works**:
+1. All rate limits are IP-based using `x-forwarded-for` header (Vercel provides this)
+2. Middleware automatically adds standard headers: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`
+3. Returns `429 Too Many Requests` with `Retry-After` header when limit exceeded
+4. Logs warnings when requests approach limit (< 20% remaining) or exceed limit
+
+**Adding rate limiting to new endpoints**:
+```typescript
+import { withRateLimit } from '@/lib/rate-limit-middleware';
+
+// Wrap your handler with rate limiting
+export const POST = withRateLimit(async (request: NextRequest) => {
+  // Your handler logic
+  return NextResponse.json({ success: true });
+}, 'AUTH_VERIFY'); // Use one of the predefined limit types
+
+// Or define a new limit type in lib/rate-limit.ts:RATE_LIMITS
+```
+
+**Setup for production** (optional but recommended):
+1. Create free account at https://upstash.com/
+2. Create Redis database (free tier: 10K requests/day)
+3. Add to Vercel environment variables:
+   - `UPSTASH_REDIS_REST_URL`
+   - `UPSTASH_REDIS_REST_TOKEN`
+4. Deploy - rate limiter automatically detects and uses Redis
+
+**Important**: In-memory mode resets on serverless cold starts. For reliable production rate limiting, use Upstash Redis.
+
 ### API Routes Quick Reference
 
 **Public**:
@@ -111,6 +158,7 @@ See `.env.example` for complete reference with descriptions.
 
 **Optional**:
 - `CLOUD_PRINT_SERVICE_URL`, `CLOUD_PRINT_API_KEY`, `CLOUD_PRINT_API_SECRET` (for PDF generation)
+- `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` (for production-grade rate limiting)
 - `BIRTHDAY_NAME` (display only)
 
 ## Key Conventions

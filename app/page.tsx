@@ -29,9 +29,10 @@ export default function Home() {
       } else {
         setError('Invalid access code. Please try again.');
       }
-    } catch (err) {
+    } catch (error: unknown) {
       setError('Something went wrong. Please try again.');
-      logger.error(err);
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      logger.error(message);
     } finally {
       setLoading(false);
     }
