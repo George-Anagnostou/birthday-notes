@@ -28,16 +28,15 @@ export function useAdminAuth(): UseAdminAuthReturn {
   const [password, setPassword] = useState('');
   const [authenticated, setAuthenticated] = useState(false);
   const [showPassword, setShowPassword] = useState(true);
-
-  // Get stored admin password (client-side only, so no need for typeof window check)
-  const storedPassword = sessionStorage.getItem('adminPassword') || '';
+  const [storedPassword, setStoredPassword] = useState('');
 
   // Check for stored admin session on mount
   useEffect(() => {
-    const storedPassword = sessionStorage.getItem('adminPassword');
-    if (storedPassword) {
+    const savedPassword = sessionStorage.getItem('adminPassword') || '';
+    setStoredPassword(savedPassword);
+    if (savedPassword) {
       setLoading(true);
-      fetchNotes(storedPassword);
+      fetchNotes(savedPassword);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -57,16 +56,19 @@ export function useAdminAuth(): UseAdminAuthReturn {
         setShowPassword(false);
         // Store password in session for persistence
         sessionStorage.setItem('adminPassword', adminPassword);
+        setStoredPassword(adminPassword);
       } else {
         setError('Invalid password');
         // Clear any stored password if authentication fails
         sessionStorage.removeItem('adminPassword');
+        setStoredPassword('');
       }
     } catch (error: unknown) {
       setError('Failed to load notes');
       const message = error instanceof Error ? error.message : 'Unknown error';
       logger.error('Failed to load notes:', message);
       sessionStorage.removeItem('adminPassword');
+      setStoredPassword('');
     } finally {
       setLoading(false);
     }
@@ -81,6 +83,7 @@ export function useAdminAuth(): UseAdminAuthReturn {
 
   const handleLogout = () => {
     sessionStorage.removeItem('adminPassword');
+    setStoredPassword('');
     setAuthenticated(false);
     setShowPassword(true);
     setNotes([]);
