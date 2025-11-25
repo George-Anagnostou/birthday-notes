@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { readNotes } from '@/lib/storage';
 import { buildCloudPrintRequest, sendCloudPrintRequest } from '@/lib/cloud-print';
+import { getCloudPrintUrl } from '@/lib/db-config';
 import { logger } from '@/lib/logger';
 import { timingSafeEqual, isValidCredential } from '@/lib/auth-utils';
 import { withRateLimit } from '@/lib/rate-limit-middleware';
 
-const CLOUD_PRINT_SERVICE_URL = process.env.CLOUD_PRINT_SERVICE_URL || '';
 const CLOUD_PRINT_API_KEY = process.env.CLOUD_PRINT_API_KEY;
 const CLOUD_PRINT_API_SECRET = process.env.CLOUD_PRINT_API_SECRET;
+const BIRTHDAY_NAME = process.env.BIRTHDAY_NAME;
 
 /**
  * POST /api/cloud-print
@@ -44,18 +45,23 @@ export const POST = withRateLimit(async (request: NextRequest) => {
     );
   }
 
+  // Get environment-aware cloud print service URL
+  const cloudPrintServiceUrl = getCloudPrintUrl();
+
+  logger.info(`📤 Cloud print request to: ${cloudPrintServiceUrl}`);
+
   // Check if cloud print service URL is configured
-  if (!CLOUD_PRINT_SERVICE_URL) {
+  if (!cloudPrintServiceUrl) {
     return NextResponse.json(
-      { error: 'Cloud print service URL not configured. Please set CLOUD_PRINT_SERVICE_URL environment variable.' },
+      { error: 'Cloud print service URL not configured. Please set CLOUD_PRINT_SERVICE_URL or CLOUD_PRINT_SERVICE_URL_DEV environment variable.' },
       { status: 500 }
     );
   }
 
   // Validate URL format
-  if (!CLOUD_PRINT_SERVICE_URL.startsWith('http://') && !CLOUD_PRINT_SERVICE_URL.startsWith('https://')) {
+  if (!cloudPrintServiceUrl.startsWith('http://') && !cloudPrintServiceUrl.startsWith('https://')) {
     return NextResponse.json(
-      { error: `Invalid CLOUD_PRINT_SERVICE_URL: "${CLOUD_PRINT_SERVICE_URL}". URL must start with http:// or https://` },
+      { error: `Invalid cloud print service URL: "${cloudPrintServiceUrl}". URL must start with http:// or https://` },
       { status: 500 }
     );
   }
@@ -87,12 +93,13 @@ export const POST = withRateLimit(async (request: NextRequest) => {
     const cloudPrintRequest = await buildCloudPrintRequest(notesToPrint, {
       encodeImages,
       requestedBy: 'admin', // Could be enhanced to include actual admin user info
+      birthdayName: BIRTHDAY_NAME,
     });
 
     // Send request to cloud printing service
     const response = await sendCloudPrintRequest(
       cloudPrintRequest,
-      CLOUD_PRINT_SERVICE_URL,
+      cloudPrintServiceUrl,
       CLOUD_PRINT_API_KEY,
       CLOUD_PRINT_API_SECRET
     );
@@ -160,9 +167,11 @@ export const GET = withRateLimit(async (request: NextRequest) => {
     );
   }
 
+  const cloudPrintServiceUrl = getCloudPrintUrl();
+
   return NextResponse.json({
-    configured: !!CLOUD_PRINT_SERVICE_URL,
-    serviceUrl: CLOUD_PRINT_SERVICE_URL ? '[CONFIGURED]' : null,
-    status: CLOUD_PRINT_SERVICE_URL ? 'ready' : 'not configured',
+    configured: !!cloudPrintServiceUrl,
+    serviceUrl: cloudPrintServiceUrl ? '[CONFIGURED]' : null,
+    status: cloudPrintServiceUrl ? 'ready' : 'not configured',
   });
 }, 'CLOUD_PRINT_CONFIG');
