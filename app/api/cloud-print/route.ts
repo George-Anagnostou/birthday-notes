@@ -5,10 +5,10 @@ import { getCloudPrintUrl } from '@/lib/db-config';
 import { logger } from '@/lib/logger';
 import { timingSafeEqual, isValidCredential } from '@/lib/auth-utils';
 import { withRateLimit } from '@/lib/rate-limit-middleware';
+import { getRecipientId, getRecipientName } from '@/lib/recipient-config';
 
 const CLOUD_PRINT_API_KEY = process.env.CLOUD_PRINT_API_KEY;
 const CLOUD_PRINT_API_SECRET = process.env.CLOUD_PRINT_API_SECRET;
-const BIRTHDAY_NAME = process.env.BIRTHDAY_NAME;
 
 /**
  * POST /api/cloud-print
@@ -74,8 +74,19 @@ export const POST = withRateLimit(async (request: NextRequest) => {
       encodeImages = false,
     } = body;
 
-    // Fetch all notes from database
-    const allNotes = await readNotes();
+    // Get recipient ID from environment to filter notes
+    let recipientId: string;
+    try {
+      recipientId = getRecipientId();
+    } catch (error) {
+      return NextResponse.json(
+        { error: 'Server configuration error' },
+        { status: 500 }
+      );
+    }
+
+    // Fetch notes for current recipient only
+    const allNotes = await readNotes(recipientId);
 
     // Filter notes if specific IDs were provided
     const notesToPrint = noteIds
@@ -93,7 +104,7 @@ export const POST = withRateLimit(async (request: NextRequest) => {
     const cloudPrintRequest = await buildCloudPrintRequest(notesToPrint, {
       encodeImages,
       requestedBy: 'admin', // Could be enhanced to include actual admin user info
-      birthdayName: BIRTHDAY_NAME,
+      birthdayName: getRecipientName(),
     });
 
     // Send request to cloud printing service

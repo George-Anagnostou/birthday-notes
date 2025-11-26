@@ -3,11 +3,23 @@ import { addNote, readNotes } from '@/lib/storage';
 import { logger } from '@/lib/logger';
 import { timingSafeEqual, isValidCredential } from '@/lib/auth-utils';
 import { withRateLimit } from '@/lib/rate-limit-middleware';
+import { getRecipientId } from '@/lib/recipient-config';
 
 // POST - Add a new note
 export const POST = withRateLimit(async (request: NextRequest) => {
   try {
     const { name, message, accessCode, images } = await request.json();
+
+    // Get recipient ID from environment
+    let recipientId: string;
+    try {
+      recipientId = getRecipientId();
+    } catch (error) {
+      return NextResponse.json(
+        { error: 'Server configuration error' },
+        { status: 500 }
+      );
+    }
 
     // Verify access code
     const correctCode = process.env.ACCESS_CODE;
@@ -60,7 +72,7 @@ export const POST = withRateLimit(async (request: NextRequest) => {
       );
     }
 
-    const note = await addNote(name.trim(), message.trim(), imageUrls);
+    const note = await addNote(name.trim(), message.trim(), recipientId, imageUrls);
     return NextResponse.json({ success: true, note });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
@@ -72,7 +84,7 @@ export const POST = withRateLimit(async (request: NextRequest) => {
   }
 }, 'NOTE_SUBMIT');
 
-// GET - Retrieve all notes (requires admin password)
+// GET - Retrieve all notes for current recipient (requires admin password)
 export const GET = withRateLimit(async (request: NextRequest) => {
   try {
     const adminPassword = request.headers.get('x-admin-password');
@@ -90,7 +102,18 @@ export const GET = withRateLimit(async (request: NextRequest) => {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const notes = await readNotes();
+    // Get recipient ID from environment to filter notes
+    let recipientId: string;
+    try {
+      recipientId = getRecipientId();
+    } catch (error) {
+      return NextResponse.json(
+        { error: 'Server configuration error' },
+        { status: 500 }
+      );
+    }
+
+    const notes = await readNotes(recipientId);
     return NextResponse.json({ notes });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
