@@ -1,3 +1,8 @@
+# TODO - UX Fixes
+
+- Remove markdown from birthday message
+- on submit, show users "completed" / printable note
+
 # TODO - Security & Code Quality Fixes
 
 ## ⚠️ HIGH PRIORITY (Fix This Week)

@@ -14,15 +14,27 @@ export default function SubmitPage() {
   const [showPreview, setShowPreview] = useState(false);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [accessCode, setAccessCode] = useState('');
+  const [showAccessCode, setShowAccessCode] = useState(false);
+  const [recipientName, setRecipientName] = useState<string>('');
   const router = useRouter();
 
   useEffect(() => {
-    // Check if user has valid access code
-    const accessCode = sessionStorage.getItem('accessCode');
-    if (!accessCode) {
-      router.push('/');
-    }
-  }, [router]);
+    // Fetch recipient name from API
+    const fetchRecipientName = async () => {
+      try {
+        const response = await fetch('/api/recipient-info');
+        if (response.ok) {
+          const data = await response.json();
+          setRecipientName(data.recipientName || 'Your Friend');
+        }
+      } catch (error) {
+        setRecipientName('Your Friend');
+      }
+    };
+
+    fetchRecipientName();
+  }, []);
 
   const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -106,8 +118,6 @@ export default function SubmitPage() {
     setLoading(true);
 
     try {
-      const accessCode = sessionStorage.getItem('accessCode');
-
       // Upload images first if any are selected
       let imageUrls: string[] = [];
       if (selectedImages.length > 0) {
@@ -189,7 +199,7 @@ export default function SubmitPage() {
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 mb-2">
-            Share Your Birthday Wishes
+            Birthday Wishes for {recipientName || '...'}
           </h1>
           <p className="text-gray-600 text-lg">
             Write a heartfelt message that will be treasured forever ✨
@@ -198,6 +208,30 @@ export default function SubmitPage() {
 
         <div className="bg-white rounded-3xl shadow-xl p-8 border-2 border-pink-100">
           <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label htmlFor="accessCode" className="block text-sm font-medium text-gray-700 mb-2">
+                Access Code
+              </label>
+              <div className="relative">
+                <input
+                  type={showAccessCode ? "text" : "password"}
+                  id="accessCode"
+                  value={accessCode}
+                  onChange={(e) => setAccessCode(e.target.value)}
+                  className="w-full px-4 py-3 border-2 border-pink-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all"
+                  placeholder="Enter access code"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowAccessCode(!showAccessCode)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  {showAccessCode ? '👁️' : '👁️‍🗨️'}
+                </button>
+              </div>
+            </div>
+
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
                 Your Name

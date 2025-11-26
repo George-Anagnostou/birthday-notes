@@ -35,17 +35,26 @@ async function ensureInitialized() {
   await initPromise;
 }
 
-// Read all notes from database
-export async function readNotes(): Promise<Note[]> {
+// Read all notes from database (optionally filtered by recipient_id)
+export async function readNotes(recipientId?: string): Promise<Note[]> {
   try {
     await ensureInitialized();
 
     const sql = getSQL();
-    const rows = await sql<(Note & { images: any })[]>`
-      SELECT id, name, message, timestamp, images
-      FROM notes
-      ORDER BY timestamp DESC
-    `;
+
+    // If recipient_id is provided, filter by it; otherwise return all notes
+    const rows = recipientId
+      ? await sql<(Note & { images: any })[]>`
+          SELECT id, name, message, timestamp, images, recipient_id
+          FROM notes
+          WHERE recipient_id = ${recipientId}
+          ORDER BY timestamp DESC
+        `
+      : await sql<(Note & { images: any })[]>`
+          SELECT id, name, message, timestamp, images, recipient_id
+          FROM notes
+          ORDER BY timestamp DESC
+        `;
 
     // Parse images from JSON and ensure it's always an array
     // Also ensure timestamp is a number (Postgres BIGINT can be returned as string)
@@ -69,6 +78,7 @@ export async function readNotes(): Promise<Note[]> {
         ...row,
         timestamp: typeof row.timestamp === 'string' ? parseInt(row.timestamp, 10) : row.timestamp,
         images: parsedImages,
+        recipient_id: row.recipient_id || 'default',
       };
     });
   } catch (error: unknown) {
@@ -83,6 +93,7 @@ export async function readNotes(): Promise<Note[]> {
 export async function addNote(
   name: string,
   message: string,
+  recipientId: string,
   images: string[] = []
 ): Promise<Note> {
   const newNote: Note = {
@@ -91,24 +102,26 @@ export async function addNote(
     message,
     timestamp: Date.now(),
     images,
+    recipient_id: recipientId,
   };
 
   try {
     await ensureInitialized();
 
-    // Store images as JSON string for compatibility
-    const imagesJson = JSON.stringify(newNote.images || []);
+    logger.debug('Adding note with recipient_id:', recipientId);
+    logger.debug('Images array:', newNote.images);
 
     const sql = getSQL();
     await sql`
-      INSERT INTO notes (id, name, message, timestamp, images)
-      VALUES (${newNote.id}, ${newNote.name}, ${newNote.message}, ${newNote.timestamp}, ${imagesJson}::jsonb)
+      INSERT INTO notes (id, name, message, timestamp, images, recipient_id)
+      VALUES (${newNote.id}, ${newNote.name}, ${newNote.message}, ${newNote.timestamp}, ${sql.json(newNote.images || [])}, ${newNote.recipient_id})
     `;
 
     return newNote;
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     logger.error('Error adding note:', message);
+    logger.error('Note data:', { id: newNote.id, recipientId: newNote.recipient_id, images: newNote.images });
     throw error;
   }
 }
@@ -125,12 +138,17 @@ export async function initializeDatabase(): Promise<void> {
         message TEXT NOT NULL,
         timestamp BIGINT NOT NULL,
         images JSONB DEFAULT '[]'::jsonb,
+        recipient_id VARCHAR(100) NOT NULL DEFAULT 'default',
         created_at TIMESTAMP DEFAULT NOW()
       )
     `;
 
     await sql`
       CREATE INDEX IF NOT EXISTS idx_notes_timestamp ON notes(timestamp DESC)
+    `;
+
+    await sql`
+      CREATE INDEX IF NOT EXISTS idx_notes_recipient ON notes(recipient_id, timestamp DESC)
     `;
 
     logger.info('Database initialized successfully');
