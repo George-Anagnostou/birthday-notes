@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { renderMarkdown } from '@/lib/markdown';
 import { logger } from '@/lib/logger';
+import RichTextEditor from '@/components/RichTextEditor';
 
 export default function SubmitPage() {
   const [name, setName] = useState('');
@@ -11,7 +11,6 @@ export default function SubmitPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [submitted, setSubmitted] = useState(false);
-  const [showPreview, setShowPreview] = useState(false);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [accessCode, setAccessCode] = useState('');
@@ -249,65 +248,18 @@ export default function SubmitPage() {
             </div>
 
             <div>
-              <div className="flex justify-between items-center mb-2">
-                <label htmlFor="message" className="block text-sm font-medium text-gray-700">
-                  Your Birthday Message
-                </label>
-                <div className="flex gap-2 text-sm">
-                  <button
-                    type="button"
-                    onClick={() => setShowPreview(false)}
-                    className={`px-3 py-1 rounded-lg transition-all ${
-                      !showPreview
-                        ? 'bg-pink-100 text-pink-700 font-semibold'
-                        : 'text-gray-600 hover:bg-gray-100'
-                    }`}
-                  >
-                    Write
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowPreview(true)}
-                    className={`px-3 py-1 rounded-lg transition-all ${
-                      showPreview
-                        ? 'bg-pink-100 text-pink-700 font-semibold'
-                        : 'text-gray-600 hover:bg-gray-100'
-                    }`}
-                  >
-                    Preview
-                  </button>
-                </div>
-              </div>
-
-              {!showPreview ? (
-                <>
-                  <textarea
-                    id="message"
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    className="w-full px-4 py-3 border-2 border-pink-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all resize-none"
-                    placeholder="Write your heartfelt birthday wishes here...&#10;&#10;You can use markdown formatting:&#10;# Heading&#10;**bold** or *italic*&#10;- List item"
-                    rows={8}
-                    required
-                    maxLength={5000}
-                  />
-                  <p className="mt-1 text-sm text-gray-500 text-right">
-                    {message.length} / 5000 characters
-                  </p>
-                </>
-              ) : (
-                <>
-                  <div
-                    className="w-full px-4 py-3 border-2 border-pink-200 rounded-xl min-h-[200px] bg-gray-50 prose prose-sm max-w-none prose-headings:text-gray-800 prose-headings:font-bold prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-li:my-1"
-                    dangerouslySetInnerHTML={{
-                      __html: message ? renderMarkdown(message) : '<p class="text-gray-400 italic">Your formatted message will appear here...</p>',
-                    }}
-                  />
-                  <p className="mt-1 text-sm text-gray-500 text-right">
-                    {message.length} / 5000 characters
-                  </p>
-                </>
-              )}
+              <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
+                Your Birthday Message
+              </label>
+              <RichTextEditor
+                value={message}
+                onChange={setMessage}
+                placeholder="Write your heartfelt birthday wishes here..."
+                maxLength={5000}
+              />
+              <p className="mt-1 text-sm text-gray-500 text-right">
+                {message.replace(/<[^>]*>/g, '').length} / 5000 characters
+              </p>
             </div>
 
             {/* Image Upload Section */}

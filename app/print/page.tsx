@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { renderMarkdown } from '@/lib/markdown';
 import { useAdminAuth } from '@/hooks/use-admin-auth';
 import { useCloudPrint } from '@/hooks/use-cloud-print';
 
@@ -258,10 +257,10 @@ export default function PrintPage() {
                 Browser Print 🖨️
               </button>
               <a
-                href="/scrapbook"
+                href="/memory-board"
                 className="bg-white/20 text-white font-semibold py-2 px-6 rounded-xl hover:bg-white/30 transition-all"
               >
-                Scrapbook
+                Memory Board
               </a>
               <a
                 href="/admin"
@@ -315,7 +314,7 @@ export default function PrintPage() {
                       prose-p:my-2 prose-ul:my-2 prose-ol:my-2
                       prose-strong:text-pink-700 prose-em:text-purple-700"
                     style={{ fontFamily: "'Open Sans', sans-serif", fontSize: '13px' }}
-                    dangerouslySetInnerHTML={{ __html: renderMarkdown(note.message) }}
+                    dangerouslySetInnerHTML={{ __html: note.message }}
                   />
 
                   {/* Display images if any */}

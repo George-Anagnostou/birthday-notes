@@ -52,7 +52,7 @@ November 20, 2025 - Rate Limiting Implementation Complete
 
 #### Design & Architecture (5)
 7. ✅ **Code Duplication in Admin Pages**
-   - Files: `app/admin/page.tsx`, `app/scrapbook/page.tsx`, `app/print/page.tsx`
+   - Files: `app/admin/page.tsx`, `app/memory-board/page.tsx`, `app/print/page.tsx`
    - Fixed: Created `hooks/use-admin-auth.ts` custom hook
    - Impact: Eliminated ~180 lines of duplicated code
 
@@ -111,7 +111,7 @@ November 20, 2025 - Rate Limiting Implementation Complete
     - Impact: Thread-safe database initialization
 
 18. ✅ **Timestamp Type Coercion Issues**
-    - Files: `app/scrapbook/page.tsx:173`, `app/print/page.tsx:343`
+    - Files: `app/memory-board/page.tsx:173`, `app/print/page.tsx:343`
     - Fixed: Added validation before Number() coercion, fallback to "Date unavailable"
     - Impact: No more "Invalid Date" or "Jan 1, 1970" displays
 
@@ -436,7 +436,7 @@ November 20, 2025 - Rate Limiting Implementation Complete
 - `app/api/upload-image/route.ts`
 - `app/api/init-db/route.ts`
 - `app/admin/page.tsx`
-- `app/scrapbook/page.tsx`
+- `app/memory-board/page.tsx`
 - `app/print/page.tsx`
 - `app/submit/page.tsx`
 - `app/page.tsx`
