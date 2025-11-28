@@ -254,7 +254,7 @@ export default function MemoryBoardPage() {
                               <img
                                 src={note.images[0]}
                                 alt="Photo 1"
-                                className="max-w-[144px] max-h-[144px] object-contain"
+                                className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
                               />
                             </div>
                           </div>
@@ -274,7 +274,7 @@ export default function MemoryBoardPage() {
                               <img
                                 src={note.images[0]}
                                 alt="Photo 1"
-                                className="max-w-[120px] max-h-[120px] object-contain"
+                                className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
                               />
                             </div>
                             <div
@@ -288,7 +288,7 @@ export default function MemoryBoardPage() {
                               <img
                                 src={note.images[1]}
                                 alt="Photo 2"
-                                className="max-w-[120px] max-h-[120px] object-contain"
+                                className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
                               />
                             </div>
                           </div>
@@ -308,7 +308,7 @@ export default function MemoryBoardPage() {
                               <img
                                 src={note.images[0]}
                                 alt="Photo 1"
-                                className="max-w-[108px] max-h-[108px] object-contain"
+                                className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
                               />
                             </div>
                             <div
@@ -322,7 +322,7 @@ export default function MemoryBoardPage() {
                               <img
                                 src={note.images[1]}
                                 alt="Photo 2"
-                                className="max-w-[108px] max-h-[108px] object-contain"
+                                className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
                               />
                             </div>
                             <div
@@ -336,7 +336,7 @@ export default function MemoryBoardPage() {
                               <img
                                 src={note.images[2]}
                                 alt="Photo 3"
-                                className="max-w-[108px] max-h-[108px] object-contain"
+                                className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
                               />
                             </div>
                           </div>
@@ -362,7 +362,7 @@ export default function MemoryBoardPage() {
                                   <img
                                     src={note.images[0]}
                                     alt="Photo 1"
-                                    className="max-w-[102px] max-h-[102px] object-contain"
+                                    className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
                                   />
                                 </div>
                                 <div
@@ -379,7 +379,7 @@ export default function MemoryBoardPage() {
                                   <img
                                     src={note.images[1]}
                                     alt="Photo 2"
-                                    className="max-w-[102px] max-h-[102px] object-contain"
+                                    className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
                                   />
                                 </div>
                               </div>
@@ -399,7 +399,7 @@ export default function MemoryBoardPage() {
                                   <img
                                     src={note.images[2]}
                                     alt="Photo 3"
-                                    className="max-w-[102px] max-h-[102px] object-contain"
+                                    className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
                                   />
                                 </div>
                                 <div
@@ -416,7 +416,7 @@ export default function MemoryBoardPage() {
                                   <img
                                     src={note.images[3]}
                                     alt="Photo 4"
-                                    className="max-w-[102px] max-h-[102px] object-contain"
+                                    className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
                                   />
                                 </div>
                               </div>
@@ -439,7 +439,7 @@ export default function MemoryBoardPage() {
                                 <img
                                   src={note.images[0]}
                                   alt="Photo 1"
-                                  className="max-w-[90px] max-h-[90px] object-contain"
+                                  className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
                                 />
                               </div>
                               <div
@@ -453,7 +453,7 @@ export default function MemoryBoardPage() {
                                 <img
                                   src={note.images[1]}
                                   alt="Photo 2"
-                                  className="max-w-[90px] max-h-[90px] object-contain"
+                                  className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
                                 />
                               </div>
                               <div
@@ -467,7 +467,7 @@ export default function MemoryBoardPage() {
                                 <img
                                   src={note.images[2]}
                                   alt="Photo 3"
-                                  className="max-w-[90px] max-h-[90px] object-contain"
+                                  className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
                                 />
                               </div>
                             </div>
@@ -483,7 +483,7 @@ export default function MemoryBoardPage() {
                                 <img
                                   src={note.images[3]}
                                   alt="Photo 4"
-                                  className="max-w-[90px] max-h-[90px] object-contain"
+                                  className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
                                 />
                               </div>
                               <div
@@ -497,7 +497,7 @@ export default function MemoryBoardPage() {
                                 <img
                                   src={note.images[4]}
                                   alt="Photo 5"
-                                  className="max-w-[90px] max-h-[90px] object-contain"
+                                  className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
                                 />
                               </div>
                             </div>
