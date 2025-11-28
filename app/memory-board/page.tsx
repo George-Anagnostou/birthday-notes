@@ -35,7 +35,7 @@ const rotations = [
   '-rotate-3',
 ];
 
-export default function ScrapbookPage() {
+export default function MemoryBoardPage() {
   // Admin authentication hook
   const {
     notes,
@@ -82,7 +82,7 @@ export default function ScrapbookPage() {
                 disabled={loading}
                 className="w-full bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 text-white font-semibold py-3 px-6 rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-200 disabled:opacity-50"
               >
-                {loading ? 'Verifying...' : 'View Scrapbook'}
+                {loading ? 'Verifying...' : 'View Memory Board'}
               </button>
             </form>
           </div>
@@ -115,7 +115,7 @@ export default function ScrapbookPage() {
         </div>
         <div className="text-center mb-12">
           <h1 className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 mb-4">
-            Birthday Scrapbook 🎉
+            Birthday Memory Board 🎉
           </h1>
           <p className="text-gray-600 text-lg">
             {notes.length} wonderful {notes.length === 1 ? 'message' : 'messages'} of love and celebration

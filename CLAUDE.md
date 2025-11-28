@@ -222,7 +222,7 @@ images: row.images ? (typeof row.images === 'string' ? JSON.parse(row.images) : 
 ### Markdown Rendering
 Uses `marked` library. Rendering happens in:
 - Submit page preview: `app/submit/page.tsx:236` (client-side)
-- Display pages: Admin/scrapbook/print (client-side)
+- Display pages: Admin/memory-board/print (client-side)
 - Cloud print: Handled by external service (server-side)
 
 Helper: `lib/markdown.ts` exports `renderMarkdown(text: string): string`

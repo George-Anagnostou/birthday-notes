@@ -165,10 +165,10 @@ export default function AdminPage() {
               {isCloudPrinting ? 'Generating PDF...' : 'Download PDF 📥'}
             </button>
             <a
-              href="/scrapbook"
+              href="/memory-board"
               className="bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold py-2 px-6 rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-200 inline-block"
             >
-              View Scrapbook 📔
+              View Memory Board 📌
             </a>
             <a
               href="/print"

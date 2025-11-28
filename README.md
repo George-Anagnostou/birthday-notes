@@ -1,12 +1,12 @@
 # Birthday Notes 🎂✨
 
-A private website for collecting birthday wishes from friends and family. Features include password-protected access, a easy submission form, and two elegant presentation modes: a colorful scrapbook collage and printable letters.
+A private website for collecting birthday wishes from friends and family. Features include password-protected access, a easy submission form, and two elegant presentation modes: a colorful memory board collage and printable letters.
 
 ## Features
 
 - 🔒 **Password-Protected Access** - Invite-only with access codes
 - 💌 **Easy Submission Form** - Simple interface for friends to share wishes
-- 🎨 **Scrapbook Visualization** - Colorful, playful collage of all messages
+- 🎨 **Memory Board Visualization** - Colorful, playful collage of all messages
 - 🖨️ **Print-Ready Letters** - Beautiful formatted letters perfect for printing
 - ☁️ **Cloud Print Integration** - Professional PDF generation via cloud printing service
 - 📊 **Admin Dashboard** - View statistics and manage all messages
@@ -63,7 +63,7 @@ npm run dev
 Access these special pages with your admin password:
 
 - **Admin Dashboard**: `/admin` - View all messages, statistics, and quick actions
-- **Scrapbook View**: `/scrapbook` - See all messages in a colorful collage
+- **Memory Board View**: `/memory-board` - See all messages in a colorful collage
 - **Print View**: `/print` - View and print beautifully formatted letters
 - **Cloud Print API**: `/api/cloud-print` - Send cards to cloud printing service (see [CLOUD_PRINT_INTEGRATION.md](./CLOUD_PRINT_INTEGRATION.md))
 

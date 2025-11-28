@@ -257,10 +257,10 @@ export default function PrintPage() {
                 Browser Print 🖨️
               </button>
               <a
-                href="/scrapbook"
+                href="/memory-board"
                 className="bg-white/20 text-white font-semibold py-2 px-6 rounded-xl hover:bg-white/30 transition-all"
               >
-                Scrapbook
+                Memory Board
               </a>
               <a
                 href="/admin"
