@@ -2,15 +2,28 @@
 
 import { useAdminAuth } from '@/hooks/use-admin-auth';
 
+// Postcard background colors with vintage feel
 const colors = [
-  'bg-pink-200',
-  'bg-purple-200',
-  'bg-blue-200',
-  'bg-yellow-200',
-  'bg-green-200',
-  'bg-red-200',
-  'bg-indigo-200',
-  'bg-orange-200',
+  'bg-amber-50',
+  'bg-rose-50',
+  'bg-sky-50',
+  'bg-lime-50',
+  'bg-purple-50',
+  'bg-orange-50',
+  'bg-teal-50',
+  'bg-pink-50',
+];
+
+// Postcard border accent colors
+const borderColors = [
+  'border-amber-300',
+  'border-rose-300',
+  'border-sky-300',
+  'border-lime-300',
+  'border-purple-300',
+  'border-orange-300',
+  'border-teal-300',
+  'border-pink-300',
 ];
 
 const rotations = [
@@ -131,49 +144,83 @@ export default function ScrapbookPage() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-min">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 auto-rows-min">
             {notes.map((note, index) => {
               const color = colors[index % colors.length];
+              const borderColor = borderColors[index % borderColors.length];
               const rotation = rotations[index % rotations.length];
 
               return (
                 <div
                   key={note.id}
-                  className={`${color} ${rotation} p-6 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 hover:rotate-0 transform`}
+                  className={`${color} ${rotation} relative rounded-lg shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 hover:rotate-0 transform border-4 ${borderColor}`}
                   style={{
-                    minHeight: '200px',
+                    minHeight: '300px',
+                    backgroundImage: 'repeating-linear-gradient(90deg, rgba(0,0,0,0.02) 0px, transparent 1px, transparent 2px, rgba(0,0,0,0.02) 3px)',
                   }}
                 >
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-start">
-                      <h3 className="font-bold text-lg text-gray-800">
-                        {note.name}
-                      </h3>
-                      <span className="text-2xl">💝</span>
-                    </div>
-                    <div
-                      className="text-gray-700 break-words prose prose-sm max-w-none prose-headings:text-gray-800 prose-headings:font-bold prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-li:my-1"
-                      dangerouslySetInnerHTML={{ __html: note.message }}
-                    />
-                    {/* Display images if any */}
+                  {/* Postcard stamp decoration */}
+                  <div className="absolute top-3 right-3 w-12 h-12 border-2 border-gray-400 border-dashed rounded opacity-40 flex items-center justify-center text-xs text-gray-500 font-mono transform rotate-12">
+                    ✓
+                  </div>
+
+                  <div className="p-6 space-y-4">
+                    {/* Polaroid photos section - displayed at top if present */}
                     {note.images && note.images.length > 0 && (
-                      <div className="mt-4 grid grid-cols-2 gap-2">
+                      <div className="flex flex-wrap gap-3 mb-4">
                         {note.images.map((imageUrl, imgIndex) => (
-                          <img
+                          <div
                             key={imgIndex}
-                            src={imageUrl}
-                            alt={`Photo ${imgIndex + 1}`}
-                            className="w-full h-32 object-cover rounded-lg"
-                          />
+                            className="bg-white p-2 pb-8 shadow-lg transform hover:scale-110 transition-transform duration-200"
+                            style={{
+                              transform: `rotate(${imgIndex % 2 === 0 ? '-' : ''}${2 + (imgIndex % 3)}deg)`,
+                            }}
+                          >
+                            <img
+                              src={imageUrl}
+                              alt={`Photo ${imgIndex + 1}`}
+                              className="w-24 h-24 object-cover"
+                            />
+                            <div className="h-6"></div>
+                          </div>
                         ))}
                       </div>
                     )}
-                    <div className="text-xs text-gray-600 mt-4">
-                      {note.timestamp && !isNaN(Number(note.timestamp))
-                        ? new Date(Number(note.timestamp)).toLocaleDateString()
-                        : 'Date unavailable'}
+
+                    {/* Postcard header with name and date */}
+                    <div className="border-b-2 border-gray-300 pb-2">
+                      <div className="flex justify-between items-center">
+                        <h3 className="font-bold text-lg text-gray-800 italic">
+                          From: {note.name}
+                        </h3>
+                        <span className="text-xl">💌</span>
+                      </div>
+                      <div className="text-xs text-gray-500 font-mono mt-1">
+                        {note.timestamp && !isNaN(Number(note.timestamp))
+                          ? new Date(Number(note.timestamp)).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric'
+                            })
+                          : 'Date unavailable'}
+                      </div>
                     </div>
+
+                    {/* Message content */}
+                    <div
+                      className="text-gray-700 break-words prose prose-sm max-w-none prose-headings:text-gray-800 prose-headings:font-bold prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-li:my-1"
+                      style={{
+                        fontFamily: 'Georgia, serif',
+                        lineHeight: '1.6',
+                      }}
+                      dangerouslySetInnerHTML={{ __html: note.message }}
+                    />
                   </div>
+
+                  {/* Postcard texture overlay */}
+                  <div className="absolute inset-0 pointer-events-none rounded-lg" style={{
+                    background: 'radial-gradient(circle at 20% 80%, rgba(0,0,0,0.03) 0%, transparent 50%)',
+                  }}></div>
                 </div>
               );
             })}
