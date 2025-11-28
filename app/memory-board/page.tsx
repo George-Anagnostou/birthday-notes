@@ -200,10 +200,6 @@ export default function MemoryBoardPage() {
                       "repeating-linear-gradient(90deg, rgba(0,0,0,0.02) 0px, transparent 1px, transparent 2px, rgba(0,0,0,0.02) 3px)",
                   }}
                 >
-                  {/* Postcard stamp decoration */}
-                  <div className="absolute top-3 right-3 w-12 h-12 border-2 border-gray-400 border-dashed rounded opacity-40 flex items-center justify-center text-xs text-gray-500 font-mono transform rotate-12">
-                    ✓
-                  </div>
 
                   <div className="p-6 space-y-4">
                     {/* Postcard header with name and date */}
@@ -212,7 +208,59 @@ export default function MemoryBoardPage() {
                         <h3 className="font-bold text-lg text-gray-800 italic">
                           From: {note.name}
                         </h3>
-                        <span className="text-xl">💌</span>
+                        <svg
+                          width="48"
+                          height="48"
+                          viewBox="0 0 48 48"
+                          fill="none"
+                        >
+                          {/* Outer white stamp border */}
+                          <rect x="2" y="2" width="44" height="44" fill="white" />
+
+                          {/* Flag area (inset from border) */}
+                          {/* Red stripes */}
+                          <rect x="6" y="6" width="36" height="2.8" fill="#B22234" />
+                          <rect x="6" y="11.6" width="36" height="2.8" fill="#B22234" />
+                          <rect x="6" y="17.2" width="36" height="2.8" fill="#B22234" />
+                          <rect x="6" y="22.8" width="36" height="2.8" fill="#B22234" />
+                          <rect x="6" y="28.4" width="36" height="2.8" fill="#B22234" />
+                          <rect x="6" y="34" width="36" height="2.8" fill="#B22234" />
+                          <rect x="6" y="39.6" width="36" height="2.4" fill="#B22234" />
+
+                          {/* Blue canton */}
+                          <rect x="6" y="6" width="15" height="16" fill="#3C3B6E" />
+
+                          {/* White stars */}
+                          <circle cx="9" cy="9" r="0.7" fill="white" />
+                          <circle cx="12.5" cy="9" r="0.7" fill="white" />
+                          <circle cx="16" cy="9" r="0.7" fill="white" />
+                          <circle cx="19.5" cy="9" r="0.7" fill="white" />
+
+                          <circle cx="10.75" cy="12" r="0.7" fill="white" />
+                          <circle cx="14.25" cy="12" r="0.7" fill="white" />
+                          <circle cx="17.75" cy="12" r="0.7" fill="white" />
+
+                          <circle cx="9" cy="15" r="0.7" fill="white" />
+                          <circle cx="12.5" cy="15" r="0.7" fill="white" />
+                          <circle cx="16" cy="15" r="0.7" fill="white" />
+                          <circle cx="19.5" cy="15" r="0.7" fill="white" />
+
+                          <circle cx="10.75" cy="18" r="0.7" fill="white" />
+                          <circle cx="14.25" cy="18" r="0.7" fill="white" />
+                          <circle cx="17.75" cy="18" r="0.7" fill="white" />
+
+                          {/* Perforated border */}
+                          <rect
+                            x="2"
+                            y="2"
+                            width="44"
+                            height="44"
+                            stroke="#888"
+                            strokeWidth="1.5"
+                            strokeDasharray="2 2"
+                            fill="none"
+                          />
+                        </svg>
                       </div>
                       <div className="text-xs text-gray-500 font-mono mt-1">
                         {note.timestamp && !isNaN(Number(note.timestamp))
