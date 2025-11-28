@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { renderMarkdown } from '@/lib/markdown';
 import { useAdminAuth } from '@/hooks/use-admin-auth';
 import { useCloudPrint } from '@/hooks/use-cloud-print';
 
@@ -315,7 +314,7 @@ export default function PrintPage() {
                       prose-p:my-2 prose-ul:my-2 prose-ol:my-2
                       prose-strong:text-pink-700 prose-em:text-purple-700"
                     style={{ fontFamily: "'Open Sans', sans-serif", fontSize: '13px' }}
-                    dangerouslySetInnerHTML={{ __html: renderMarkdown(note.message) }}
+                    dangerouslySetInnerHTML={{ __html: note.message }}
                   />
 
                   {/* Display images if any */}

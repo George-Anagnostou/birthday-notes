@@ -1,23 +1,23 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
   const router = useRouter();
-  const [recipientName, setRecipientName] = useState<string>('');
+  const [recipientName, setRecipientName] = useState<string>("");
 
   useEffect(() => {
     // Fetch recipient name from API
     const fetchRecipientName = async () => {
       try {
-        const response = await fetch('/api/recipient-info');
+        const response = await fetch("/api/recipient-info");
         if (response.ok) {
           const data = await response.json();
-          setRecipientName(data.recipientName || 'Your Friend');
+          setRecipientName(data.recipientName || "Your Friend");
         }
       } catch (error) {
-        setRecipientName('Your Friend');
+        setRecipientName("Your Friend");
       }
     };
 
@@ -30,13 +30,17 @@ export default function Home() {
         <div className="text-center mb-8">
           <div className="inline-block relative">
             <h1 className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 mb-2">
-              Birthday Wishes
+              Happy Birthday {recipientName || ""}!
             </h1>
-            <div className="absolute -top-6 -right-8 text-4xl animate-bounce">✨</div>
-            <div className="absolute -bottom-2 -left-6 text-3xl animate-pulse">🎂</div>
+            <div className="absolute -top-6 -right-8 text-4xl animate-bounce">
+              ✨
+            </div>
+            <div className="absolute -bottom-2 -left-6 text-3xl animate-pulse">
+              🎂
+            </div>
           </div>
           <p className="mt-6 text-gray-600 text-lg">
-            Share a special birthday message for {recipientName || '...'}
+            Share a special birthday message for {recipientName || "..."}
           </p>
         </div>
 
@@ -46,7 +50,7 @@ export default function Home() {
               Click below to write your birthday wishes
             </p>
             <button
-              onClick={() => router.push('/submit')}
+              onClick={() => router.push("/submit")}
               className="w-full bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 text-white font-semibold py-3 px-6 rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-200"
             >
               Write a Message 💌

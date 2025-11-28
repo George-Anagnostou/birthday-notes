@@ -95,7 +95,10 @@ export default function AdminPage() {
 
   // Calculate statistics
   const totalNotes = notes.length;
-  const totalWords = notes.reduce((sum, note) => sum + note.message.split(/\s+/).length, 0);
+  const totalWords = notes.reduce((sum, note) => {
+    const plainText = note.message.replace(/<[^>]*>/g, '');
+    return sum + plainText.split(/\s+/).filter(w => w.length > 0).length;
+  }, 0);
   const avgWordsPerNote = totalNotes > 0 ? Math.round(totalWords / totalNotes) : 0;
   const sortedNotes = [...notes].sort((a, b) => b.timestamp - a.timestamp);
 
@@ -208,11 +211,12 @@ export default function AdminPage() {
                       #{totalNotes - index}
                     </span>
                   </div>
-                  <p className="text-gray-700 whitespace-pre-wrap break-words mt-2">
-                    {note.message}
-                  </p>
+                  <div
+                    className="text-gray-700 break-words mt-2 prose prose-sm max-w-none prose-headings:text-gray-800 prose-headings:font-bold prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-li:my-1"
+                    dangerouslySetInnerHTML={{ __html: note.message }}
+                  />
                   <div className="mt-2 text-sm text-gray-500">
-                    {note.message.split(/\s+/).length} words
+                    {note.message.replace(/<[^>]*>/g, '').split(/\s+/).filter(w => w.length > 0).length} words
                   </div>
                 </div>
               ))}

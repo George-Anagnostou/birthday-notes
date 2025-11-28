@@ -1,7 +1,6 @@
 'use client';
 
 import { useAdminAuth } from '@/hooks/use-admin-auth';
-import { renderMarkdown } from '@/lib/markdown';
 
 const colors = [
   'bg-pink-200',
@@ -154,7 +153,7 @@ export default function ScrapbookPage() {
                     </div>
                     <div
                       className="text-gray-700 break-words prose prose-sm max-w-none prose-headings:text-gray-800 prose-headings:font-bold prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-li:my-1"
-                      dangerouslySetInnerHTML={{ __html: renderMarkdown(note.message) }}
+                      dangerouslySetInnerHTML={{ __html: note.message }}
                     />
                     {/* Display images if any */}
                     {note.images && note.images.length > 0 && (
