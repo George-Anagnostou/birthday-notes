@@ -4,6 +4,40 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { logger } from '@/lib/logger';
 import RichTextEditor from '@/components/RichTextEditor';
+import type { Note } from '@/types/note';
+
+// Postcard background colors with vintage feel
+const colors = [
+  "bg-amber-50",
+  "bg-rose-50",
+  "bg-sky-50",
+  "bg-lime-50",
+  "bg-purple-50",
+  "bg-orange-50",
+  "bg-teal-50",
+  "bg-pink-50",
+];
+
+// Postcard border accent colors
+const borderColors = [
+  "border-amber-300",
+  "border-rose-300",
+  "border-sky-300",
+  "border-lime-300",
+  "border-purple-300",
+  "border-orange-300",
+  "border-teal-300",
+  "border-pink-300",
+];
+
+const rotations = [
+  "rotate-1",
+  "-rotate-1",
+  "rotate-2",
+  "-rotate-2",
+  "rotate-3",
+  "-rotate-3",
+];
 
 export default function SubmitPage() {
   const [name, setName] = useState('');
@@ -16,6 +50,8 @@ export default function SubmitPage() {
   const [accessCode, setAccessCode] = useState('');
   const [showAccessCode, setShowAccessCode] = useState(false);
   const [recipientName, setRecipientName] = useState<string>('');
+  const [submittedNote, setSubmittedNote] = useState<Note | null>(null);
+  const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -149,11 +185,24 @@ export default function SubmitPage() {
       });
 
       if (response.ok) {
+        const data = await response.json();
+        // Use the note returned from the API which includes recipient_id
+        if (data.note) {
+          setSubmittedNote(data.note);
+        } else {
+          // Fallback: construct note object manually (shouldn't happen)
+          const note: Note = {
+            id: data.noteId || '0',
+            name,
+            message,
+            timestamp: Date.now(),
+            images: imageUrls,
+            recipient_id: 'default',
+          };
+          setSubmittedNote(note);
+        }
         setSubmitted(true);
-        setName('');
-        setMessage('');
-        setSelectedImages([]);
-        setImagePreviews([]);
+        // Don't clear the form yet - we'll show the preview first
       } else {
         const data = await response.json();
         setError(data.error || 'Failed to submit your message. Please try again.');
@@ -167,26 +216,453 @@ export default function SubmitPage() {
     }
   };
 
-  if (submitted) {
+  if (submitted && submittedNote) {
+    // Use a random index for card styling
+    const cardIndex = Math.floor(Math.random() * colors.length);
+    const color = colors[cardIndex];
+    const borderColor = borderColors[cardIndex];
+    const rotation = rotations[cardIndex % rotations.length];
+
     return (
-      <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 p-4">
-        <div className="max-w-md w-full text-center">
-          <div className="bg-white rounded-3xl shadow-xl p-8 border-2 border-pink-100">
+      <main className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 p-4 py-12">
+        {/* Enlarged image overlay with polaroid frame */}
+        {enlargedImage && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 cursor-pointer backdrop-blur-2xl"
+            style={{
+              background: "rgba(255, 255, 255, 0.01)",
+              backdropFilter: "blur(40px) saturate(180%)",
+              WebkitBackdropFilter: "blur(40px) saturate(180%)",
+            }}
+            onClick={() => setEnlargedImage(null)}
+          >
+            <div
+              className="bg-white p-4 pb-12 shadow-2xl animate-in fade-in zoom-in duration-300 ring-1 ring-black/5"
+              style={{
+                maxWidth: "70vw",
+                maxHeight: "70vh",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <img
+                src={enlargedImage}
+                alt="Enlarged view"
+                className="w-full h-full object-contain"
+                style={{
+                  maxWidth: "calc(70vw - 2rem)",
+                  maxHeight: "calc(70vh - 5rem)",
+                }}
+              />
+            </div>
+          </div>
+        )}
+
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-8">
             <div className="text-6xl mb-4">🎉</div>
             <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 mb-4">
               Thank You!
             </h2>
-            <p className="text-gray-600 mb-6">
-              Your birthday message has been submitted successfully! It will be part of a beautiful surprise.
+            <p className="text-gray-600 mb-2">
+              Your birthday message has been submitted successfully!
             </p>
+            <p className="text-gray-600 text-sm">
+              Here&apos;s how it will appear on the memory board:
+            </p>
+          </div>
+
+          {/* Card Preview */}
+          <div className="flex justify-center mb-8">
+            <div
+              className={`${color} ${rotation} relative rounded-lg shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 hover:rotate-0 transform border-4 ${borderColor} max-w-md w-full`}
+              style={{
+                minHeight: "300px",
+                backgroundImage:
+                  "repeating-linear-gradient(90deg, rgba(0,0,0,0.02) 0px, transparent 1px, transparent 2px, rgba(0,0,0,0.02) 3px)",
+              }}
+            >
+              <div className="p-6 space-y-4">
+                {/* Postcard header with name and date */}
+                <div className="border-b-2 border-gray-300 pb-2">
+                  <div className="flex justify-between items-center">
+                    <h3 className="font-bold text-lg text-gray-800 italic">
+                      From: {submittedNote.name}
+                    </h3>
+                    <svg
+                      width="48"
+                      height="48"
+                      viewBox="0 0 48 48"
+                      fill="none"
+                    >
+                      {/* Outer white stamp border */}
+                      <rect x="2" y="2" width="44" height="44" fill="white" />
+
+                      {/* Flag area (inset from border) */}
+                      {/* Red stripes */}
+                      <rect x="6" y="6" width="36" height="2.8" fill="#B22234" />
+                      <rect x="6" y="11.6" width="36" height="2.8" fill="#B22234" />
+                      <rect x="6" y="17.2" width="36" height="2.8" fill="#B22234" />
+                      <rect x="6" y="22.8" width="36" height="2.8" fill="#B22234" />
+                      <rect x="6" y="28.4" width="36" height="2.8" fill="#B22234" />
+                      <rect x="6" y="34" width="36" height="2.8" fill="#B22234" />
+                      <rect x="6" y="39.6" width="36" height="2.4" fill="#B22234" />
+
+                      {/* Blue canton */}
+                      <rect x="6" y="6" width="15" height="16" fill="#3C3B6E" />
+
+                      {/* White stars */}
+                      <circle cx="9" cy="9" r="0.7" fill="white" />
+                      <circle cx="12.5" cy="9" r="0.7" fill="white" />
+                      <circle cx="16" cy="9" r="0.7" fill="white" />
+                      <circle cx="19.5" cy="9" r="0.7" fill="white" />
+
+                      <circle cx="10.75" cy="12" r="0.7" fill="white" />
+                      <circle cx="14.25" cy="12" r="0.7" fill="white" />
+                      <circle cx="17.75" cy="12" r="0.7" fill="white" />
+
+                      <circle cx="9" cy="15" r="0.7" fill="white" />
+                      <circle cx="12.5" cy="15" r="0.7" fill="white" />
+                      <circle cx="16" cy="15" r="0.7" fill="white" />
+                      <circle cx="19.5" cy="15" r="0.7" fill="white" />
+
+                      <circle cx="10.75" cy="18" r="0.7" fill="white" />
+                      <circle cx="14.25" cy="18" r="0.7" fill="white" />
+                      <circle cx="17.75" cy="18" r="0.7" fill="white" />
+
+                      {/* Perforated border */}
+                      <rect
+                        x="2"
+                        y="2"
+                        width="44"
+                        height="44"
+                        stroke="#888"
+                        strokeWidth="1.5"
+                        strokeDasharray="2 2"
+                        fill="none"
+                      />
+                    </svg>
+                  </div>
+                  <div className="text-xs text-gray-500 font-mono mt-1">
+                    {new Date(submittedNote.timestamp).toLocaleDateString(
+                      "en-US",
+                      {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      }
+                    )}
+                  </div>
+                </div>
+
+                {/* Message content */}
+                <div
+                  className="text-gray-700 break-words prose prose-sm max-w-none prose-headings:text-gray-800 prose-headings:font-bold prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-li:my-1"
+                  style={{
+                    fontFamily: "Georgia, serif",
+                    lineHeight: "1.6",
+                  }}
+                  dangerouslySetInnerHTML={{ __html: submittedNote.message }}
+                />
+
+                {/* Polaroid photos section - displayed at bottom if present */}
+                {submittedNote.images && submittedNote.images.length > 0 && (
+                  <div className="relative mt-6 min-h-[140px]">
+                    {submittedNote.images.length === 1 && (
+                      // Single photo: centered, angled slightly
+                      <div className="flex justify-center">
+                        <div
+                          className="bg-white p-2 pb-6 shadow-lg hover:scale-110 transition-transform duration-200 cursor-pointer"
+                          style={{
+                            transform: `rotate(-3deg)`,
+                          }}
+                          onClick={() => submittedNote.images && setEnlargedImage(submittedNote.images[0])}
+                        >
+                          <img
+                            src={submittedNote.images[0]}
+                            alt="Photo 1"
+                            className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {submittedNote.images.length === 2 && (
+                      // Two photos: side by side with slight overlap
+                      <div className="flex justify-center items-end">
+                        <div
+                          className="bg-white p-2 pb-6 shadow-lg hover:scale-110 hover:z-20 transition-all duration-200 relative cursor-pointer"
+                          style={{
+                            transform: `rotate(-4deg)`,
+                            zIndex: 2,
+                          }}
+                          onClick={() => submittedNote.images && setEnlargedImage(submittedNote.images[0])}
+                        >
+                          <img
+                            src={submittedNote.images[0]}
+                            alt="Photo 1"
+                            className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
+                          />
+                        </div>
+                        <div
+                          className="bg-white p-2 pb-6 shadow-lg hover:scale-110 hover:z-20 transition-all duration-200 relative cursor-pointer"
+                          style={{
+                            transform: `rotate(3deg) translateX(-12px)`,
+                            zIndex: 1,
+                          }}
+                          onClick={() => submittedNote.images && setEnlargedImage(submittedNote.images[1])}
+                        >
+                          <img
+                            src={submittedNote.images[1]}
+                            alt="Photo 2"
+                            className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {submittedNote.images.length === 3 && (
+                      // Three photos: slight overlap, fan arrangement
+                      <div className="flex justify-center items-end">
+                        <div
+                          className="bg-white p-2 pb-6 shadow-lg hover:scale-110 hover:z-20 transition-all duration-200 relative cursor-pointer"
+                          style={{
+                            transform: `rotate(-5deg)`,
+                            zIndex: 1,
+                          }}
+                          onClick={() => submittedNote.images && setEnlargedImage(submittedNote.images[0])}
+                        >
+                          <img
+                            src={submittedNote.images[0]}
+                            alt="Photo 1"
+                            className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
+                          />
+                        </div>
+                        <div
+                          className="bg-white p-2 pb-6 shadow-lg hover:scale-110 hover:z-20 transition-all duration-200 relative cursor-pointer"
+                          style={{
+                            transform: `rotate(1deg) translateX(-10px)`,
+                            zIndex: 3,
+                          }}
+                          onClick={() => submittedNote.images && setEnlargedImage(submittedNote.images[1])}
+                        >
+                          <img
+                            src={submittedNote.images[1]}
+                            alt="Photo 2"
+                            className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
+                          />
+                        </div>
+                        <div
+                          className="bg-white p-2 pb-6 shadow-lg hover:scale-110 hover:z-20 transition-all duration-200 relative cursor-pointer"
+                          style={{
+                            transform: `rotate(4deg) translateX(-18px)`,
+                            zIndex: 2,
+                          }}
+                          onClick={() => submittedNote.images && setEnlargedImage(submittedNote.images[2])}
+                        >
+                          <img
+                            src={submittedNote.images[2]}
+                            alt="Photo 3"
+                            className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {submittedNote.images.length === 4 && (
+                      // Four photos: 2x2 grid with center overlap
+                      <div className="flex justify-center items-center">
+                        <div className="relative">
+                          {/* Top row */}
+                          <div className="flex items-center justify-center mb-[-30px]">
+                            <div
+                              className="bg-white p-2 pb-6 shadow-lg hover:scale-110 hover:z-30 transition-all duration-200 cursor-pointer relative"
+                              style={{
+                                transform: `rotate(-4deg)`,
+                                zIndex: 2,
+                                marginRight: "-15px",
+                              }}
+                              onClick={() =>
+                                submittedNote.images && setEnlargedImage(submittedNote.images[0])
+                              }
+                            >
+                              <img
+                                src={submittedNote.images[0]}
+                                alt="Photo 1"
+                                className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
+                              />
+                            </div>
+                            <div
+                              className="bg-white p-2 pb-6 shadow-lg hover:scale-110 hover:z-30 transition-all duration-200 cursor-pointer relative"
+                              style={{
+                                transform: `rotate(3deg)`,
+                                zIndex: 1,
+                                marginLeft: "-15px",
+                              }}
+                              onClick={() =>
+                                submittedNote.images && setEnlargedImage(submittedNote.images[1])
+                              }
+                            >
+                              <img
+                                src={submittedNote.images[1]}
+                                alt="Photo 2"
+                                className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
+                              />
+                            </div>
+                          </div>
+                          {/* Bottom row */}
+                          <div className="flex items-center justify-center">
+                            <div
+                              className="bg-white p-2 pb-6 shadow-lg hover:scale-110 hover:z-30 transition-all duration-200 cursor-pointer relative"
+                              style={{
+                                transform: `rotate(2deg)`,
+                                zIndex: 3,
+                                marginRight: "-15px",
+                              }}
+                              onClick={() =>
+                                submittedNote.images && setEnlargedImage(submittedNote.images[2])
+                              }
+                            >
+                              <img
+                                src={submittedNote.images[2]}
+                                alt="Photo 3"
+                                className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
+                              />
+                            </div>
+                            <div
+                              className="bg-white p-2 pb-6 shadow-lg hover:scale-110 hover:z-30 transition-all duration-200 cursor-pointer relative"
+                              style={{
+                                transform: `rotate(-3deg)`,
+                                zIndex: 4,
+                                marginLeft: "-15px",
+                              }}
+                              onClick={() =>
+                                submittedNote.images && setEnlargedImage(submittedNote.images[3])
+                              }
+                            >
+                              <img
+                                src={submittedNote.images[3]}
+                                alt="Photo 4"
+                                className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {submittedNote.images.length === 5 && (
+                      // Five photos: staggered arrangement with minimal overlap
+                      <div className="flex flex-col items-center gap-1">
+                        <div className="flex justify-center items-end">
+                          <div
+                            className="bg-white p-2 pb-6 shadow-lg hover:scale-110 hover:z-20 transition-all duration-200 relative cursor-pointer"
+                            style={{
+                              transform: `rotate(-5deg)`,
+                              zIndex: 1,
+                            }}
+                            onClick={() => submittedNote.images && setEnlargedImage(submittedNote.images[0])}
+                          >
+                            <img
+                              src={submittedNote.images[0]}
+                              alt="Photo 1"
+                              className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
+                            />
+                          </div>
+                          <div
+                            className="bg-white p-2 pb-6 shadow-lg hover:scale-110 hover:z-20 transition-all duration-200 relative cursor-pointer"
+                            style={{
+                              transform: `rotate(2deg) translateX(-8px)`,
+                              zIndex: 2,
+                            }}
+                            onClick={() => submittedNote.images && setEnlargedImage(submittedNote.images[1])}
+                          >
+                            <img
+                              src={submittedNote.images[1]}
+                              alt="Photo 2"
+                              className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
+                            />
+                          </div>
+                          <div
+                            className="bg-white p-2 pb-6 shadow-lg hover:scale-110 hover:z-20 transition-all duration-200 relative cursor-pointer"
+                            style={{
+                              transform: `rotate(-2deg) translateX(-14px)`,
+                              zIndex: 3,
+                            }}
+                            onClick={() => submittedNote.images && setEnlargedImage(submittedNote.images[2])}
+                          >
+                            <img
+                              src={submittedNote.images[2]}
+                              alt="Photo 3"
+                              className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex justify-center items-end -mt-3">
+                          <div
+                            className="bg-white p-2 pb-6 shadow-lg hover:scale-110 hover:z-20 transition-all duration-200 relative cursor-pointer"
+                            style={{
+                              transform: `rotate(4deg)`,
+                              zIndex: 4,
+                            }}
+                            onClick={() => submittedNote.images && setEnlargedImage(submittedNote.images[3])}
+                          >
+                            <img
+                              src={submittedNote.images[3]}
+                              alt="Photo 4"
+                              className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
+                            />
+                          </div>
+                          <div
+                            className="bg-white p-2 pb-6 shadow-lg hover:scale-110 hover:z-20 transition-all duration-200 relative cursor-pointer"
+                            style={{
+                              transform: `rotate(-3deg) translateX(-8px)`,
+                              zIndex: 5,
+                            }}
+                            onClick={() => submittedNote.images && setEnlargedImage(submittedNote.images[4])}
+                          >
+                            <img
+                              src={submittedNote.images[4]}
+                              alt="Photo 5"
+                              className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Postcard texture overlay */}
+              <div
+                className="absolute inset-0 pointer-events-none rounded-lg"
+                style={{
+                  background:
+                    "radial-gradient(circle at 20% 80%, rgba(0,0,0,0.03) 0%, transparent 50%)",
+                }}
+              ></div>
+            </div>
+          </div>
+
+          {/* Action button */}
+          <div className="text-center">
             <button
               onClick={() => {
                 setSubmitted(false);
+                setSubmittedNote(null);
+                setName('');
+                setMessage('');
+                setSelectedImages([]);
+                setImagePreviews([]);
+                setAccessCode('');
               }}
               className="bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 text-white font-semibold py-3 px-6 rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-200"
             >
               Submit Another Message 💌
             </button>
+            <p className="text-sm text-gray-500 mt-4">
+              Your message will be included in the birthday memory board 💝
+            </p>
           </div>
         </div>
       </main>
