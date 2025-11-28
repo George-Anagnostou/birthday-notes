@@ -297,7 +297,7 @@ export default function MemoryBoardPage() {
                               style={{
                                 transform: `rotate(-3deg)`,
                               }}
-                              onClick={() => setEnlargedImage(note.images[0])}
+                              onClick={() => note.images && setEnlargedImage(note.images[0])}
                             >
                               <img
                                 src={note.images[0]}
@@ -317,7 +317,7 @@ export default function MemoryBoardPage() {
                                 transform: `rotate(-4deg)`,
                                 zIndex: 2,
                               }}
-                              onClick={() => setEnlargedImage(note.images[0])}
+                              onClick={() => note.images && setEnlargedImage(note.images[0])}
                             >
                               <img
                                 src={note.images[0]}
@@ -331,7 +331,7 @@ export default function MemoryBoardPage() {
                                 transform: `rotate(3deg) translateX(-12px)`,
                                 zIndex: 1,
                               }}
-                              onClick={() => setEnlargedImage(note.images[1])}
+                              onClick={() => note.images && setEnlargedImage(note.images[1])}
                             >
                               <img
                                 src={note.images[1]}
@@ -351,7 +351,7 @@ export default function MemoryBoardPage() {
                                 transform: `rotate(-5deg)`,
                                 zIndex: 1,
                               }}
-                              onClick={() => setEnlargedImage(note.images[0])}
+                              onClick={() => note.images && setEnlargedImage(note.images[0])}
                             >
                               <img
                                 src={note.images[0]}
@@ -365,7 +365,7 @@ export default function MemoryBoardPage() {
                                 transform: `rotate(1deg) translateX(-10px)`,
                                 zIndex: 3,
                               }}
-                              onClick={() => setEnlargedImage(note.images[1])}
+                              onClick={() => note.images && setEnlargedImage(note.images[1])}
                             >
                               <img
                                 src={note.images[1]}
@@ -379,7 +379,7 @@ export default function MemoryBoardPage() {
                                 transform: `rotate(4deg) translateX(-18px)`,
                                 zIndex: 2,
                               }}
-                              onClick={() => setEnlargedImage(note.images[2])}
+                              onClick={() => note.images && setEnlargedImage(note.images[2])}
                             >
                               <img
                                 src={note.images[2]}
@@ -404,7 +404,7 @@ export default function MemoryBoardPage() {
                                     marginRight: "-15px",
                                   }}
                                   onClick={() =>
-                                    setEnlargedImage(note.images[0])
+                                    note.images && setEnlargedImage(note.images[0])
                                   }
                                 >
                                   <img
@@ -421,7 +421,7 @@ export default function MemoryBoardPage() {
                                     marginLeft: "-15px",
                                   }}
                                   onClick={() =>
-                                    setEnlargedImage(note.images[1])
+                                    note.images && setEnlargedImage(note.images[1])
                                   }
                                 >
                                   <img
@@ -441,7 +441,7 @@ export default function MemoryBoardPage() {
                                     marginRight: "-15px",
                                   }}
                                   onClick={() =>
-                                    setEnlargedImage(note.images[2])
+                                    note.images && setEnlargedImage(note.images[2])
                                   }
                                 >
                                   <img
@@ -458,7 +458,7 @@ export default function MemoryBoardPage() {
                                     marginLeft: "-15px",
                                   }}
                                   onClick={() =>
-                                    setEnlargedImage(note.images[3])
+                                    note.images && setEnlargedImage(note.images[3])
                                   }
                                 >
                                   <img
@@ -482,7 +482,7 @@ export default function MemoryBoardPage() {
                                   transform: `rotate(-5deg)`,
                                   zIndex: 1,
                                 }}
-                                onClick={() => setEnlargedImage(note.images[0])}
+                                onClick={() => note.images && setEnlargedImage(note.images[0])}
                               >
                                 <img
                                   src={note.images[0]}
@@ -496,7 +496,7 @@ export default function MemoryBoardPage() {
                                   transform: `rotate(2deg) translateX(-8px)`,
                                   zIndex: 2,
                                 }}
-                                onClick={() => setEnlargedImage(note.images[1])}
+                                onClick={() => note.images && setEnlargedImage(note.images[1])}
                               >
                                 <img
                                   src={note.images[1]}
@@ -510,7 +510,7 @@ export default function MemoryBoardPage() {
                                   transform: `rotate(-2deg) translateX(-14px)`,
                                   zIndex: 3,
                                 }}
-                                onClick={() => setEnlargedImage(note.images[2])}
+                                onClick={() => note.images && setEnlargedImage(note.images[2])}
                               >
                                 <img
                                   src={note.images[2]}
@@ -526,7 +526,7 @@ export default function MemoryBoardPage() {
                                   transform: `rotate(4deg)`,
                                   zIndex: 4,
                                 }}
-                                onClick={() => setEnlargedImage(note.images[3])}
+                                onClick={() => note.images && setEnlargedImage(note.images[3])}
                               >
                                 <img
                                   src={note.images[3]}
@@ -540,7 +540,7 @@ export default function MemoryBoardPage() {
                                   transform: `rotate(-3deg) translateX(-8px)`,
                                   zIndex: 5,
                                 }}
-                                onClick={() => setEnlargedImage(note.images[4])}
+                                onClick={() => note.images && setEnlargedImage(note.images[4])}
                               >
                                 <img
                                   src={note.images[4]}
