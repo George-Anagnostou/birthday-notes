@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { logger } from '@/lib/logger';
 import RichTextEditor from '@/components/RichTextEditor';
 import type { Note } from '@/types/note';
+import { getAccentColor, getAccentCSSVars } from '@/lib/theme-config';
+import type { AccentColor } from '@/lib/theme-config';
 
 // Postcard background colors with vintage feel
 const colors = [
@@ -53,23 +55,28 @@ export default function SubmitPage() {
   const [recipientName, setRecipientName] = useState<string>('');
   const [submittedNote, setSubmittedNote] = useState<Note | null>(null);
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
+  const [accent, setAccent] = useState<AccentColor>(getAccentColor(undefined));
   const router = useRouter();
 
   useEffect(() => {
-    // Fetch recipient name from API
-    const fetchRecipientName = async () => {
+    // Fetch recipient info from API
+    const fetchRecipientInfo = async () => {
       try {
         const response = await fetch('/api/recipient-info');
         if (response.ok) {
           const data = await response.json();
           setRecipientName(data.recipientName || 'Your Friend');
+          // Use recipient_id to determine accent color
+          const accentColor = getAccentColor(data.recipientId);
+          setAccent(accentColor);
         }
       } catch (error) {
         setRecipientName('Your Friend');
+        setAccent(getAccentColor(undefined));
       }
     };
 
-    fetchRecipientName();
+    fetchRecipientInfo();
   }, []);
 
   const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -964,18 +971,83 @@ export default function SubmitPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 p-4 py-12">
-      <div className="max-w-2xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 mb-2">
-            Birthday Wishes for {recipientName || '...'}
-          </h1>
-          <p className="text-gray-600 text-lg">
-            Write a heartfelt message that will be treasured forever ✨
+    <main
+      className="min-h-screen p-4 py-12 relative overflow-hidden"
+      style={{
+        background: `linear-gradient(135deg, ${accent.light} 0%, #ffffff 50%, ${accent.light} 100%)`,
+        ...getAccentCSSVars(accent)
+      }}
+    >
+      {/* Subtle decorative elements */}
+      <div className="absolute inset-0 opacity-5">
+        <div className="absolute top-20 right-20 w-64 h-64 rounded-full blur-3xl"
+             style={{ backgroundColor: accent.primary }}></div>
+        <div className="absolute bottom-20 left-20 w-96 h-96 rounded-full blur-3xl"
+             style={{ backgroundColor: accent.primary }}></div>
+      </div>
+
+      <div className="max-w-2xl mx-auto relative z-10">
+        {/* Header */}
+        <div className="text-center mb-10">
+          <div
+            className="w-16 h-1 rounded-full mx-auto mb-6 animate-pulse"
+            style={{ backgroundColor: accent.primary }}
+          ></div>
+
+          <div className="flex items-center justify-center gap-3 md:gap-5 mb-3">
+            {/* Floating emojis - side by side */}
+            <div className="text-2xl md:text-3xl flex-shrink-0"
+                 style={{
+                   animation: 'float 3s ease-in-out infinite',
+                   animationDelay: '0s'
+                 }}>
+              🎈
+            </div>
+
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-gray-900" style={{ fontFamily: 'var(--font-title)' }}>
+              Birthday Wishes
+            </h1>
+
+            <div className="text-2xl md:text-3xl flex-shrink-0"
+                 style={{
+                   animation: 'float 3s ease-in-out infinite',
+                   animationDelay: '1.5s'
+                 }}>
+              ✨
+            </div>
+          </div>
+
+          <h2
+            className="text-3xl md:text-4xl font-bold tracking-tight mb-6 transition-all duration-300 hover:scale-105"
+            style={{ color: accent.primary, fontFamily: 'var(--font-signature)' }}
+          >
+            for {recipientName || '...'}
+          </h2>
+
+          <div
+            className="w-16 h-1 rounded-full mx-auto mb-4 animate-pulse"
+            style={{ backgroundColor: accent.primary, animationDelay: '0.5s' }}
+          ></div>
+
+          <p className="text-gray-600 text-lg" style={{ fontFamily: 'var(--font-body)', fontWeight: 400 }}>
+            Share your heartfelt message
           </p>
+
+          {/* CSS for float animation */}
+          <style jsx>{`
+            @keyframes float {
+              0%, 100% {
+                transform: translateY(-10px);
+              }
+              50% {
+                transform: translateY(10px);
+              }
+            }
+          `}</style>
         </div>
 
-        <div className="bg-white rounded-3xl shadow-xl p-8 border-2 border-pink-100">
+        {/* Form Card */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl p-8 md:p-10 border border-gray-100 transform transition-all duration-500 hover:shadow-3xl">
           <form onSubmit={handlePreview} className="space-y-6">
             <div>
               <label htmlFor="accessCode" className="block text-sm font-medium text-gray-700 mb-2">
@@ -987,14 +1059,18 @@ export default function SubmitPage() {
                   id="accessCode"
                   value={accessCode}
                   onChange={(e) => setAccessCode(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-pink-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-2 transition-all"
+                  style={{
+                    borderColor: accessCode ? accent.primary : undefined,
+                    boxShadow: accessCode ? `0 0 0 1px ${accent.primary}` : undefined
+                  }}
                   placeholder="Enter access code"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowAccessCode(!showAccessCode)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                 >
                   {showAccessCode ? '👁️' : '👁️‍🗨️'}
                 </button>
@@ -1010,7 +1086,11 @@ export default function SubmitPage() {
                 id="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-pink-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-2 transition-all"
+                style={{
+                  borderColor: name ? accent.primary : undefined,
+                  boxShadow: name ? `0 0 0 1px ${accent.primary}` : undefined
+                }}
                 placeholder="Enter your name"
                 required
                 maxLength={100}
@@ -1027,7 +1107,7 @@ export default function SubmitPage() {
                 placeholder="Write your heartfelt birthday wishes here..."
                 maxLength={5000}
               />
-              <p className="mt-1 text-sm text-gray-500 text-right">
+              <p className="mt-1 text-sm text-gray-500 text-right" style={{ fontFamily: 'var(--font-body)', fontWeight: 400 }}>
                 {message.replace(/<[^>]*>/g, '').length} / 5000 characters
               </p>
             </div>
@@ -1035,10 +1115,10 @@ export default function SubmitPage() {
             {/* Image Upload Section */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Add Photos (Optional)
+                Add Photos <span className="text-gray-400 font-light">(Optional)</span>
               </label>
-              <p className="text-xs text-gray-500 mb-3">
-                You can add up to 5 images. Each image must be less than 5MB.
+              <p className="text-xs text-gray-500 mb-3" style={{ fontFamily: 'var(--font-body)', fontWeight: 400 }}>
+                Up to 5 images, each less than 5MB
               </p>
 
               <div className="space-y-3">
@@ -1050,12 +1130,12 @@ export default function SubmitPage() {
                         <img
                           src={preview}
                           alt={`Preview ${index + 1}`}
-                          className="w-full h-32 object-cover rounded-lg border-2 border-pink-200"
+                          className="w-full h-32 object-cover rounded-lg border border-gray-200"
                         />
                         <button
                           type="button"
                           onClick={() => removeImage(index)}
-                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="absolute top-2 right-2 bg-white/90 text-gray-600 rounded-full w-7 h-7 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-md hover:bg-white"
                         >
                           ×
                         </button>
@@ -1074,12 +1154,24 @@ export default function SubmitPage() {
                       onChange={handleImageSelect}
                       className="hidden"
                     />
-                    <div className="border-2 border-dashed border-pink-200 rounded-xl p-6 text-center cursor-pointer hover:border-pink-400 transition-all bg-pink-50 hover:bg-pink-100">
+                    <div
+                      className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-all"
+                      style={{
+                        borderColor: accent.primary,
+                        backgroundColor: `${accent.light}40`,
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = `${accent.light}80`;
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = `${accent.light}40`;
+                      }}
+                    >
                       <div className="text-3xl mb-2">📸</div>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-gray-600" style={{ fontFamily: 'var(--font-body)', fontWeight: 500 }}>
                         Click to select images
                       </p>
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-gray-500 mt-1" style={{ fontFamily: 'var(--font-body)', fontWeight: 400 }}>
                         {selectedImages.length}/5 images selected
                       </p>
                     </div>
@@ -1089,7 +1181,7 @@ export default function SubmitPage() {
             </div>
 
             {error && (
-              <div className="text-red-500 text-sm text-center bg-red-50 py-2 px-4 rounded-lg">
+              <div className="text-red-600 text-sm text-center bg-red-50 py-3 px-4 rounded-lg border border-red-100">
                 {error}
               </div>
             )}
@@ -1097,17 +1189,43 @@ export default function SubmitPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 text-white font-semibold py-3 px-6 rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              className="w-full py-4 rounded-lg text-white text-lg transition-all duration-300 hover:shadow-xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{
+                backgroundColor: accent.primary,
+                fontFamily: 'var(--font-body)',
+                fontWeight: 500,
+              }}
+              onMouseEnter={(e) => {
+                if (!loading) {
+                  e.currentTarget.style.backgroundColor = accent.hover;
+                  e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!loading) {
+                  e.currentTarget.style.backgroundColor = accent.primary;
+                  e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                }
+              }}
             >
-              Preview Your Message 👀
+              {loading ? 'Preparing Preview... ⏳' : 'Preview Your Message 👀'}
             </button>
           </form>
         </div>
 
-        <div className="mt-6 text-center">
-          <p className="text-sm text-gray-500">
-            Your message will be included in a special birthday collection 💝
-          </p>
+        {/* Footer */}
+        <div className="mt-8 text-center">
+          <div className="inline-flex items-center space-x-2 text-sm text-gray-500">
+            <div
+              className="w-2 h-2 rounded-full animate-pulse"
+              style={{ backgroundColor: accent.primary }}
+            ></div>
+            <span style={{ fontFamily: 'var(--font-body)', fontWeight: 400 }}>Your message will be treasured forever</span>
+            <div
+              className="w-2 h-2 rounded-full animate-pulse"
+              style={{ backgroundColor: accent.primary, animationDelay: '0.5s' }}
+            ></div>
+          </div>
         </div>
       </div>
     </main>
