@@ -1004,7 +1004,7 @@ export default function SubmitPage() {
               🎈
             </div>
 
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif font-light tracking-tight text-gray-900">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-gray-900" style={{ fontFamily: 'var(--font-title)' }}>
               Birthday Wishes
             </h1>
 
@@ -1018,8 +1018,8 @@ export default function SubmitPage() {
           </div>
 
           <h2
-            className="text-3xl md:text-4xl font-serif font-bold tracking-tight mb-6 transition-all duration-300 hover:scale-105"
-            style={{ color: accent.primary }}
+            className="text-3xl md:text-4xl font-bold tracking-tight mb-6 transition-all duration-300 hover:scale-105"
+            style={{ color: accent.primary, fontFamily: 'var(--font-signature)' }}
           >
             for {recipientName || '...'}
           </h2>
@@ -1029,7 +1029,7 @@ export default function SubmitPage() {
             style={{ backgroundColor: accent.primary, animationDelay: '0.5s' }}
           ></div>
 
-          <p className="text-gray-600 text-lg font-light">
+          <p className="text-gray-600 text-lg" style={{ fontFamily: 'var(--font-body)', fontWeight: 400 }}>
             Share your heartfelt message
           </p>
 
@@ -1107,7 +1107,7 @@ export default function SubmitPage() {
                 placeholder="Write your heartfelt birthday wishes here..."
                 maxLength={5000}
               />
-              <p className="mt-1 text-sm text-gray-500 text-right font-light">
+              <p className="mt-1 text-sm text-gray-500 text-right" style={{ fontFamily: 'var(--font-body)', fontWeight: 400 }}>
                 {message.replace(/<[^>]*>/g, '').length} / 5000 characters
               </p>
             </div>
@@ -1117,7 +1117,7 @@ export default function SubmitPage() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Add Photos <span className="text-gray-400 font-light">(Optional)</span>
               </label>
-              <p className="text-xs text-gray-500 mb-3 font-light">
+              <p className="text-xs text-gray-500 mb-3" style={{ fontFamily: 'var(--font-body)', fontWeight: 400 }}>
                 Up to 5 images, each less than 5MB
               </p>
 
@@ -1168,10 +1168,10 @@ export default function SubmitPage() {
                       }}
                     >
                       <div className="text-3xl mb-2">📸</div>
-                      <p className="text-sm text-gray-600 font-medium">
+                      <p className="text-sm text-gray-600" style={{ fontFamily: 'var(--font-body)', fontWeight: 500 }}>
                         Click to select images
                       </p>
-                      <p className="text-xs text-gray-500 mt-1 font-light">
+                      <p className="text-xs text-gray-500 mt-1" style={{ fontFamily: 'var(--font-body)', fontWeight: 400 }}>
                         {selectedImages.length}/5 images selected
                       </p>
                     </div>
@@ -1189,9 +1189,11 @@ export default function SubmitPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-4 rounded-lg font-medium text-white text-lg transition-all duration-300 hover:shadow-xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-4 rounded-lg text-white text-lg transition-all duration-300 hover:shadow-xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
               style={{
                 backgroundColor: accent.primary,
+                fontFamily: 'var(--font-body)',
+                fontWeight: 500,
               }}
               onMouseEnter={(e) => {
                 if (!loading) {
@@ -1218,7 +1220,7 @@ export default function SubmitPage() {
               className="w-2 h-2 rounded-full animate-pulse"
               style={{ backgroundColor: accent.primary }}
             ></div>
-            <span className="font-light">Your message will be treasured forever</span>
+            <span style={{ fontFamily: 'var(--font-body)', fontWeight: 400 }}>Your message will be treasured forever</span>
             <div
               className="w-2 h-2 rounded-full animate-pulse"
               style={{ backgroundColor: accent.primary, animationDelay: '0.5s' }}

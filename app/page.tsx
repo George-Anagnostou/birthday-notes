@@ -70,7 +70,7 @@ export default function Home() {
                   🎉
                 </div>
 
-                <h1 className="text-4xl sm:text-5xl md:text-6xl font-serif font-light tracking-tight text-gray-900">
+                <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-gray-900" style={{ fontFamily: 'var(--font-title)' }}>
                   Happy Birthday
                 </h1>
 
@@ -84,8 +84,8 @@ export default function Home() {
               </div>
 
               <h2
-                className="text-4xl md:text-5xl font-serif font-bold tracking-tight transition-all duration-300 hover:scale-105"
-                style={{ color: accent.primary }}
+                className="text-4xl md:text-5xl font-bold tracking-tight transition-all duration-300 hover:scale-105"
+                style={{ color: accent.primary, fontFamily: 'var(--font-signature)' }}
               >
                 {recipientName || "..."}
               </h2>
@@ -109,7 +109,7 @@ export default function Home() {
             `}</style>
 
             {/* Description */}
-            <p className="text-lg text-gray-600 max-w-md mx-auto font-light leading-relaxed">
+            <p className="text-lg text-gray-600 max-w-md mx-auto leading-relaxed" style={{ fontFamily: 'var(--font-body)', fontWeight: 400 }}>
               Leave a heartfelt message to celebrate this special day
             </p>
 
@@ -117,9 +117,11 @@ export default function Home() {
             <div className="pt-4">
               <button
                 onClick={() => router.push("/submit")}
-                className="group relative px-8 py-4 rounded-xl font-medium text-white text-lg transition-all duration-300 hover:shadow-xl hover:scale-105 hover:-translate-y-1"
+                className="group relative px-8 py-4 rounded-xl text-white text-lg transition-all duration-300 hover:shadow-xl hover:scale-105 hover:-translate-y-1"
                 style={{
                   backgroundColor: accent.primary,
+                  fontFamily: 'var(--font-body)',
+                  fontWeight: 500,
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.backgroundColor = accent.hover;
@@ -138,7 +140,7 @@ export default function Home() {
             </div>
 
             {/* Footer text */}
-            <p className="text-sm text-gray-500 font-light pt-4">
+            <p className="text-sm text-gray-500 pt-4" style={{ fontFamily: 'var(--font-body)', fontWeight: 400 }}>
               Your message will be treasured forever
             </p>
           </div>
