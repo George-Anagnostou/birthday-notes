@@ -8,13 +8,25 @@ import { getRecipientId } from '@/lib/recipient-config';
 // POST - Add a new note
 export const POST = withRateLimit(async (request: NextRequest) => {
   try {
-    const { name, message, accessCode, images } = await request.json();
+    logger.info('📝 Note submission started');
+    const body = await request.json();
+    const { name, message, accessCode, images } = body;
+
+    logger.debug('Request body received:', {
+      hasName: !!name,
+      hasMessage: !!message,
+      hasAccessCode: !!accessCode,
+      imageCount: images?.length || 0,
+      messageLength: message?.length || 0
+    });
 
     // Get recipient ID from environment
     let recipientId: string;
     try {
       recipientId = getRecipientId();
+      logger.debug('Recipient ID retrieved:', recipientId);
     } catch (error) {
+      logger.error('Failed to get recipient ID:', error);
       return NextResponse.json(
         { error: 'Server configuration error' },
         { status: 500 }
@@ -26,13 +38,15 @@ export const POST = withRateLimit(async (request: NextRequest) => {
     if (!correctCode || !isValidCredential(correctCode, 4)) {
       logger.error('ACCESS_CODE environment variable is not set or invalid');
       return NextResponse.json(
-        { error: 'Server configuration error' },
+        { error: 'Server configuration error: ACCESS_CODE not configured' },
         { status: 500 }
       );
     }
     if (!accessCode || !timingSafeEqual(accessCode, correctCode)) {
+      logger.warn('Invalid access code attempt');
       return NextResponse.json({ error: 'Invalid access code' }, { status: 401 });
     }
+    logger.debug('Access code verified successfully');
 
     // Validate input
     if (!name || !message) {
@@ -72,13 +86,31 @@ export const POST = withRateLimit(async (request: NextRequest) => {
       );
     }
 
+    logger.info('💾 Saving note to database...', {
+      recipientId,
+      nameLength: name.trim().length,
+      messageLength: message.trim().length,
+      imageCount: imageUrls.length
+    });
+
     const note = await addNote(name.trim(), message.trim(), recipientId, imageUrls);
+
+    logger.info('✅ Note saved successfully', { noteId: note.id });
     return NextResponse.json({ success: true, note });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    logger.error('Error adding note:', message);
+    const stack = error instanceof Error ? error.stack : undefined;
+    logger.error('❌ Error adding note:', { message, stack });
+
+    // Provide more specific error messages based on error type
+    let errorMessage = 'Failed to save note';
+    if (message.includes('database') || message.includes('postgres') || message.includes('connection')) {
+      errorMessage = 'Database connection error. Please try again.';
+      logger.error('Database connection issue detected');
+    }
+
     return NextResponse.json(
-      { error: 'Failed to save note' },
+      { error: errorMessage },
       { status: 500 }
     );
   }
