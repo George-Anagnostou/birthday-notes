@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getEnvironmentInfo } from '@/lib/db-config';
 import { logger } from '@/lib/logger';
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 /**
  * Health check endpoint to verify environment configuration
  * Useful for debugging production issues
