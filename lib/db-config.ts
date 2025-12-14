@@ -32,16 +32,29 @@ export function getBlobToken(): string {
   const isDev = isDevelopment();
 
   if (isDev) {
-    const devToken = process.env.BLOB_READ_WRITE_TOKEN_DEV;
+    // Check both naming conventions: new (BLOB_DEV_*) and old (BLOB_*_DEV)
+    const devToken =
+      process.env.BLOB_DEV_READ_WRITE_TOKEN ||
+      process.env.BLOB_READ_WRITE_TOKEN_DEV;
+
     if (!devToken) {
-      logger.warn('⚠️  BLOB_READ_WRITE_TOKEN_DEV not found. Falling back to BLOB_READ_WRITE_TOKEN.');
-      return process.env.BLOB_READ_WRITE_TOKEN || '';
+      logger.warn('⚠️  Development blob token not found. Checked: BLOB_DEV_READ_WRITE_TOKEN, BLOB_READ_WRITE_TOKEN_DEV');
+      logger.warn('⚠️  Falling back to BLOB_READ_WRITE_TOKEN or BLOB_PROD_READ_WRITE_TOKEN');
+      return process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_PROD_READ_WRITE_TOKEN || '';
     }
     return devToken;
   }
 
-  // Production uses the standard token (auto-injected by Vercel)
-  return process.env.BLOB_READ_WRITE_TOKEN || '';
+  // Production: Check both naming conventions: new (BLOB_PROD_*) and old (BLOB_READ_WRITE_TOKEN)
+  const prodToken =
+    process.env.BLOB_PROD_READ_WRITE_TOKEN ||
+    process.env.BLOB_READ_WRITE_TOKEN;
+
+  if (!prodToken) {
+    logger.error('⚠️  Production blob token not found. Checked: BLOB_PROD_READ_WRITE_TOKEN, BLOB_READ_WRITE_TOKEN');
+  }
+
+  return prodToken || '';
 }
 
 export function getCloudPrintUrl(): string {
@@ -62,10 +75,21 @@ export function getCloudPrintUrl(): string {
 
 export function getEnvironmentInfo() {
   const isDev = isDevelopment();
+
+  // Detailed blob token check
+  const blobTokenStatus = getBlobToken() ? '✅ Connected' : '❌ Not configured';
+  const blobTokenDetails = {
+    BLOB_READ_WRITE_TOKEN: !!process.env.BLOB_READ_WRITE_TOKEN,
+    BLOB_PROD_READ_WRITE_TOKEN: !!process.env.BLOB_PROD_READ_WRITE_TOKEN,
+    BLOB_DEV_READ_WRITE_TOKEN: !!process.env.BLOB_DEV_READ_WRITE_TOKEN,
+    BLOB_READ_WRITE_TOKEN_DEV: !!process.env.BLOB_READ_WRITE_TOKEN_DEV,
+  };
+
   return {
     environment: isDev ? 'development' : 'production',
     postgresUrl: getPostgresUrl() ? '✅ Connected' : '❌ Not configured',
-    blobToken: getBlobToken() ? '✅ Connected' : '❌ Not configured',
+    blobToken: blobTokenStatus,
+    blobTokenDetails,
     cloudPrintUrl: getCloudPrintUrl() ? '✅ Connected' : '❌ Not configured',
   };
 }
