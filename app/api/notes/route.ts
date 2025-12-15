@@ -15,6 +15,7 @@ export const POST = withRateLimit(async (request: NextRequest) => {
     try {
       recipientId = getRecipientId();
     } catch (error) {
+      logger.error('Failed to get recipient ID:', error);
       return NextResponse.json(
         { error: 'Server configuration error' },
         { status: 500 }
@@ -26,7 +27,7 @@ export const POST = withRateLimit(async (request: NextRequest) => {
     if (!correctCode || !isValidCredential(correctCode, 4)) {
       logger.error('ACCESS_CODE environment variable is not set or invalid');
       return NextResponse.json(
-        { error: 'Server configuration error' },
+        { error: 'Server configuration error: ACCESS_CODE not configured' },
         { status: 500 }
       );
     }
@@ -77,8 +78,15 @@ export const POST = withRateLimit(async (request: NextRequest) => {
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     logger.error('Error adding note:', message);
+
+    // Provide more specific error messages based on error type
+    let errorMessage = 'Failed to save note';
+    if (message.includes('database') || message.includes('postgres') || message.includes('connection')) {
+      errorMessage = 'Database connection error. Please try again.';
+    }
+
     return NextResponse.json(
-      { error: 'Failed to save note' },
+      { error: errorMessage },
       { status: 500 }
     );
   }

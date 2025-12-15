@@ -187,8 +187,22 @@ export default function SubmitPage() {
         });
 
         if (!uploadResponse.ok) {
-          const uploadData = await uploadResponse.json();
-          setError(uploadData.error || 'Failed to upload images');
+          let errorMessage = 'Failed to upload images';
+          try {
+            const contentType = uploadResponse.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+              const uploadData = await uploadResponse.json();
+              errorMessage = uploadData.error || uploadData.message || errorMessage;
+            } else {
+              const text = await uploadResponse.text();
+              logger.error(`Non-JSON upload error response (${uploadResponse.status}):`, text.substring(0, 200));
+              errorMessage = `Image upload failed (${uploadResponse.status}). Please try again.`;
+            }
+          } catch (parseError) {
+            logger.error('Failed to parse upload error response:', parseError);
+            errorMessage = `Image upload failed (${uploadResponse.status}). Please try again.`;
+          }
+          setError(errorMessage);
           setLoading(false);
           return;
         }
@@ -224,8 +238,24 @@ export default function SubmitPage() {
         setSubmitted(true);
         setShowPreview(false);
       } else {
-        const data = await response.json();
-        setError(data.error || 'Failed to submit your message. Please try again.');
+        // Try to parse error response as JSON, but handle non-JSON responses gracefully
+        let errorMessage = 'Failed to submit your message. Please try again.';
+        try {
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const data = await response.json();
+            errorMessage = data.error || data.message || errorMessage;
+          } else {
+            // Non-JSON response (HTML error page, etc.)
+            const text = await response.text();
+            logger.error(`Non-JSON error response (${response.status}):`, text.substring(0, 200));
+            errorMessage = `Server error (${response.status}). Please try again later.`;
+          }
+        } catch (parseError) {
+          logger.error('Failed to parse error response:', parseError);
+          errorMessage = `Server error (${response.status}). Please try again later.`;
+        }
+        setError(errorMessage);
       }
     } catch (error: unknown) {
       setError('Something went wrong. Please try again.');
