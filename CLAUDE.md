@@ -153,13 +153,29 @@ See `.env.example` for complete reference with descriptions.
 - Selection logic in `lib/db-config.ts` based on `NODE_ENV`
 
 **Required**:
+- `RECIPIENT_ID`, `RECIPIENT_NAME` (identifies which recipient this deployment is for)
 - `ACCESS_CODE`, `ADMIN_PASSWORD`
-- `POSTGRES_URL_DEV`, `BLOB_READ_WRITE_TOKEN_DEV` (for local dev)
+- `POSTGRES_URL` (auto-injected by Vercel when you connect Postgres storage)
+- `BLOB_READ_WRITE_TOKEN` or `BLOB_PROD_READ_WRITE_TOKEN` (auto-injected when you connect Blob storage)
+- For local dev: `POSTGRES_URL_DEV`, `BLOB_READ_WRITE_TOKEN_DEV` (or `BLOB_DEV_READ_WRITE_TOKEN`)
 
 **Optional**:
 - `CLOUD_PRINT_SERVICE_URL`, `CLOUD_PRINT_API_KEY`, `CLOUD_PRINT_API_SECRET` (for PDF generation)
 - `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` (for production-grade rate limiting)
-- `BIRTHDAY_NAME` (display only)
+
+### Vercel Deployment Setup
+
+**Critical**: When connecting storage in Vercel, ensure it's assigned to **all environments** (Production, Preview, Development):
+1. Vercel Dashboard → Storage → Click your Postgres/Blob
+2. Find your project in "Connected Projects"
+3. Click "Edit" → Check ✅ Production, ✅ Preview, ✅ Development
+4. Save and redeploy
+
+**Blob Token Naming**: `getBlobToken()` supports both naming conventions:
+- Old: `BLOB_READ_WRITE_TOKEN`, `BLOB_READ_WRITE_TOKEN_DEV`
+- New: `BLOB_PROD_READ_WRITE_TOKEN`, `BLOB_DEV_READ_WRITE_TOKEN`
+
+ **Health Check**: Use `GET /api/health` with `x-admin-password` header to verify all environment variables are configured correctly. See `DEPLOYMENT_CHECKLIST.md` for detailed troubleshooting.
 
 ## Key Conventions
 

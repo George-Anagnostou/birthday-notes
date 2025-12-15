@@ -18,17 +18,15 @@ function getSQL() {
   if (!sql) {
     const connectionString = getPostgresUrl();
     if (!connectionString) {
-      logger.error('❌ Database connection string not configured');
-      logger.error('Environment check:', {
+      logger.error('Database connection string not configured', {
         nodeEnv: process.env.NODE_ENV,
         hasPostgresUrl: !!process.env.POSTGRES_URL,
         hasPostgresUrlDev: !!process.env.POSTGRES_URL_DEV
       });
       throw new Error('Database connection string not configured');
     }
-    logger.info('🔌 Initializing database connection', {
-      environment: isDevelopment() ? 'development' : 'production',
-      urlPrefix: connectionString.substring(0, 20) + '...'
+    logger.info('Initializing database connection', {
+      environment: isDevelopment() ? 'development' : 'production'
     });
     // Create postgres.js client (which @vercel/postgres uses under the hood)
     sql = postgres(connectionString);
@@ -116,42 +114,23 @@ export async function addNote(
   };
 
   try {
-    logger.debug('Ensuring database is initialized...');
     await ensureInitialized();
 
-    logger.debug('Adding note with recipient_id:', recipientId);
-    logger.debug('Images array:', newNote.images);
-
     const sql = getSQL();
-    logger.debug('Executing INSERT query...');
-
     await sql`
       INSERT INTO notes (id, name, message, timestamp, images, recipient_id)
       VALUES (${newNote.id}, ${newNote.name}, ${newNote.message}, ${newNote.timestamp}, ${sql.json(newNote.images || [])}, ${newNote.recipient_id})
     `;
 
-    logger.debug('Note inserted successfully');
+    logger.info('Note saved successfully', { noteId: newNote.id, recipientId: newNote.recipient_id });
     return newNote;
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    const stack = error instanceof Error ? error.stack : undefined;
-    logger.error('❌ Error adding note:', { message, stack });
-    logger.error('Note data:', {
-      id: newNote.id,
+    logger.error('Error adding note:', {
+      message,
       recipientId: newNote.recipient_id,
-      nameLength: newNote.name.length,
-      messageLength: newNote.message.length,
       imageCount: newNote.images?.length || 0
     });
-
-    // Check for specific database errors
-    if (message.includes('connect') || message.includes('timeout')) {
-      logger.error('⚠️  Database connection issue detected');
-    }
-    if (message.includes('permission') || message.includes('unauthorized')) {
-      logger.error('⚠️  Database permission issue detected');
-    }
-
     throw error;
   }
 }
@@ -159,10 +138,9 @@ export async function addNote(
 // Initialize database (create table if it doesn't exist)
 export async function initializeDatabase(): Promise<void> {
   try {
-    logger.info('📋 Initializing database schema...');
+    logger.info('Initializing database schema...');
     const sql = getSQL();
 
-    logger.debug('Creating notes table if not exists...');
     await sql`
       CREATE TABLE IF NOT EXISTS notes (
         id VARCHAR(255) PRIMARY KEY,
@@ -175,21 +153,18 @@ export async function initializeDatabase(): Promise<void> {
       )
     `;
 
-    logger.debug('Creating timestamp index...');
     await sql`
       CREATE INDEX IF NOT EXISTS idx_notes_timestamp ON notes(timestamp DESC)
     `;
 
-    logger.debug('Creating recipient index...');
     await sql`
       CREATE INDEX IF NOT EXISTS idx_notes_recipient ON notes(recipient_id, timestamp DESC)
     `;
 
-    logger.info('✅ Database initialized successfully');
+    logger.info('Database initialized successfully');
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    const stack = error instanceof Error ? error.stack : undefined;
-    logger.error('❌ Error initializing database:', { message, stack });
+    logger.error('Error initializing database:', message);
     throw error;
   }
 }

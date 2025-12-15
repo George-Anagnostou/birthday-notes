@@ -172,18 +172,10 @@ export default function SubmitPage() {
     setError('');
     setLoading(true);
 
-    logger.info('🚀 Starting note submission process', {
-      hasName: !!name,
-      hasMessage: !!message,
-      hasAccessCode: !!accessCode,
-      imageCount: selectedImages.length
-    });
-
     try {
       // Upload images first if any are selected
       let imageUrls: string[] = [];
       if (selectedImages.length > 0) {
-        logger.info('📤 Uploading images...', { count: selectedImages.length });
         const formData = new FormData();
         selectedImages.forEach(image => {
           formData.append('images', image);
@@ -217,22 +209,13 @@ export default function SubmitPage() {
 
         const uploadData = await uploadResponse.json();
         imageUrls = uploadData.urls;
-        logger.info('✅ Images uploaded successfully', { urls: imageUrls.length });
       }
 
       // Submit note with image URLs
-      logger.info('📨 Submitting note to API...');
       const response = await fetch('/api/notes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, message, accessCode, images: imageUrls }),
-      });
-
-      logger.info('📬 Received response from API', {
-        status: response.status,
-        statusText: response.statusText,
-        ok: response.ok,
-        contentType: response.headers.get('content-type')
       });
 
       if (response.ok) {
