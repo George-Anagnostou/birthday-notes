@@ -1,7 +1,9 @@
 "use client";
 
 import { useAdminAuth } from "@/hooks/use-admin-auth";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getAccentColor, getAccentCSSVars } from "@/lib/theme-config";
+import type { AccentColor } from "@/lib/theme-config";
 
 // Postcard background colors with vintage feel
 const colors = [
@@ -38,6 +40,7 @@ const rotations = [
 
 export default function MemoryBoardPage() {
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
+  const [accent, setAccent] = useState<AccentColor>(getAccentColor(undefined));
 
   // Admin authentication hook
   const {
@@ -52,12 +55,52 @@ export default function MemoryBoardPage() {
     handleLogout,
   } = useAdminAuth();
 
+  useEffect(() => {
+    // Fetch recipient info from API to get accent color
+    const fetchRecipientInfo = async () => {
+      try {
+        const response = await fetch('/api/recipient-info');
+        if (response.ok) {
+          const data = await response.json();
+          const accentColor = getAccentColor(data.recipientId);
+          setAccent(accentColor);
+        }
+      } catch (error) {
+        setAccent(getAccentColor(undefined));
+      }
+    };
+
+    fetchRecipientInfo();
+  }, []);
+
   if (showPassword) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 p-4">
-        <div className="max-w-md w-full">
-          <div className="bg-white rounded-3xl shadow-xl p-8 border-2 border-pink-100">
-            <h2 className="text-2xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 mb-6">
+      <main
+        className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
+        style={{
+          background: `linear-gradient(135deg, ${accent.light} 0%, #ffffff 50%, ${accent.light} 100%)`,
+          ...getAccentCSSVars(accent)
+        }}
+      >
+        {/* Subtle decorative elements */}
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute top-20 left-20 w-64 h-64 rounded-full blur-3xl"
+               style={{ backgroundColor: accent.primary }}></div>
+          <div className="absolute bottom-20 right-20 w-96 h-96 rounded-full blur-3xl"
+               style={{ backgroundColor: accent.primary }}></div>
+        </div>
+
+        <div className="max-w-md w-full relative z-10">
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl p-8 border border-gray-100">
+            <div
+              className="w-16 h-1 rounded-full mx-auto mb-6 animate-pulse"
+              style={{ backgroundColor: accent.primary }}
+            ></div>
+
+            <h2
+              className="text-2xl font-bold text-center mb-6 tracking-tight"
+              style={{ color: accent.primary, fontFamily: 'var(--font-title)' }}
+            >
               Admin Access Required
             </h2>
             <form onSubmit={handlePasswordSubmit} className="space-y-4">
@@ -65,6 +108,7 @@ export default function MemoryBoardPage() {
                 <label
                   htmlFor="password"
                   className="block text-sm font-medium text-gray-700 mb-2"
+                  style={{ fontFamily: 'var(--font-body)', fontWeight: 500 }}
                 >
                   Admin Password
                 </label>
@@ -73,20 +117,39 @@ export default function MemoryBoardPage() {
                   id="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-pink-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-2 transition-all"
+                  style={{
+                    borderColor: password ? accent.primary : undefined,
+                    boxShadow: password ? `0 0 0 1px ${accent.primary}` : undefined
+                  }}
                   placeholder="Enter admin password"
                   required
                 />
               </div>
               {error && (
-                <div className="text-red-500 text-sm text-center bg-red-50 py-2 px-4 rounded-lg">
+                <div className="text-red-600 text-sm text-center bg-red-50 py-3 px-4 rounded-lg border border-red-100">
                   {error}
                 </div>
               )}
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 text-white font-semibold py-3 px-6 rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-200 disabled:opacity-50"
+                className="w-full text-white font-semibold py-3 px-6 rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-200 disabled:opacity-50"
+                style={{
+                  backgroundColor: accent.primary,
+                  fontFamily: 'var(--font-body)',
+                  fontWeight: 500,
+                }}
+                onMouseEnter={(e) => {
+                  if (!loading) {
+                    e.currentTarget.style.backgroundColor = accent.hover;
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!loading) {
+                    e.currentTarget.style.backgroundColor = accent.primary;
+                  }
+                }}
               >
                 {loading ? "Verifying..." : "View Memory Board"}
               </button>
@@ -99,17 +162,39 @@ export default function MemoryBoardPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
-        <div className="text-center">
+      <main
+        className="min-h-screen flex items-center justify-center relative overflow-hidden"
+        style={{
+          background: `linear-gradient(135deg, ${accent.light} 0%, #ffffff 50%, ${accent.light} 100%)`,
+          ...getAccentCSSVars(accent)
+        }}
+      >
+        <div className="text-center relative z-10">
           <div className="text-4xl mb-4">✨</div>
-          <p className="text-gray-600">Loading birthday wishes...</p>
+          <p className="text-gray-600" style={{ fontFamily: 'var(--font-body)', fontWeight: 400 }}>
+            Loading birthday wishes...
+          </p>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 p-8">
+    <main
+      className="min-h-screen p-8 relative overflow-hidden"
+      style={{
+        background: `linear-gradient(135deg, ${accent.light} 0%, #ffffff 50%, ${accent.light} 100%)`,
+        ...getAccentCSSVars(accent)
+      }}
+    >
+      {/* Subtle decorative elements */}
+      <div className="absolute inset-0 opacity-5">
+        <div className="absolute top-20 right-20 w-64 h-64 rounded-full blur-3xl"
+             style={{ backgroundColor: accent.primary }}></div>
+        <div className="absolute bottom-20 left-20 w-96 h-96 rounded-full blur-3xl"
+             style={{ backgroundColor: accent.primary }}></div>
+      </div>
+
       {/* Enlarged image overlay with polaroid frame */}
       {enlargedImage && (
         <div
@@ -142,20 +227,45 @@ export default function MemoryBoardPage() {
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto relative z-10">
         <div className="flex justify-end mb-4">
           <button
             onClick={handleLogout}
             className="bg-red-500 text-white font-semibold py-2 px-4 rounded-xl hover:bg-red-600 transition-all"
+            style={{ fontFamily: 'var(--font-body)', fontWeight: 500 }}
           >
             Logout 🚪
           </button>
         </div>
         <div className="text-center mb-12">
-          <h1 className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 mb-4">
-            Birthday Memory Board 🎉
-          </h1>
-          <p className="text-gray-600 text-lg">
+          <div
+            className="w-16 h-1 rounded-full mx-auto mb-6 animate-pulse"
+            style={{ backgroundColor: accent.primary }}
+          ></div>
+
+          <div className="flex items-center justify-center gap-3 md:gap-5 mb-4">
+            <div className="text-3xl md:text-4xl flex-shrink-0"
+                 style={{
+                   animation: 'float 3s ease-in-out infinite',
+                   animationDelay: '0s'
+                 }}>
+              🎉
+            </div>
+
+            <h1
+              className="text-4xl sm:text-5xl font-bold tracking-tight"
+              style={{ color: accent.primary, fontFamily: 'var(--font-title)' }}
+            >
+              Birthday Memory Board
+            </h1>
+          </div>
+
+          <div
+            className="w-16 h-1 rounded-full mx-auto mb-4 animate-pulse"
+            style={{ backgroundColor: accent.primary, animationDelay: '0.5s' }}
+          ></div>
+
+          <p className="text-gray-600 text-lg" style={{ fontFamily: 'var(--font-body)', fontWeight: 400 }}>
             {notes.length} wonderful{" "}
             {notes.length === 1 ? "message" : "messages"} of love and
             celebration
@@ -163,23 +273,61 @@ export default function MemoryBoardPage() {
           <div className="mt-4 flex gap-4 justify-center">
             <a
               href="/print"
-              className="bg-white text-purple-600 font-semibold py-2 px-6 rounded-xl border-2 border-purple-200 hover:shadow-lg transform hover:scale-105 transition-all duration-200"
+              className="font-semibold py-2 px-6 rounded-xl border-2 hover:shadow-lg transform hover:scale-105 transition-all duration-200"
+              style={{
+                backgroundColor: 'white',
+                color: accent.primary,
+                borderColor: accent.light,
+                fontFamily: 'var(--font-body)',
+                fontWeight: 500,
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = accent.primary;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = accent.light;
+              }}
             >
               View Print Version 📄
             </a>
             <a
               href="/admin"
-              className="bg-white text-pink-600 font-semibold py-2 px-6 rounded-xl border-2 border-pink-200 hover:shadow-lg transform hover:scale-105 transition-all duration-200"
+              className="font-semibold py-2 px-6 rounded-xl border-2 hover:shadow-lg transform hover:scale-105 transition-all duration-200"
+              style={{
+                backgroundColor: 'white',
+                color: accent.primary,
+                borderColor: accent.light,
+                fontFamily: 'var(--font-body)',
+                fontWeight: 500,
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = accent.primary;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = accent.light;
+              }}
             >
               Admin Panel ⚙️
             </a>
           </div>
+
+          {/* CSS for float animation */}
+          <style jsx>{`
+            @keyframes float {
+              0%, 100% {
+                transform: translateY(-10px);
+              }
+              50% {
+                transform: translateY(10px);
+              }
+            }
+          `}</style>
         </div>
 
         {notes.length === 0 ? (
           <div className="text-center py-20">
             <div className="text-6xl mb-4">📝</div>
-            <p className="text-gray-600 text-lg">
+            <p className="text-gray-600 text-lg" style={{ fontFamily: 'var(--font-body)', fontWeight: 400 }}>
               No messages yet. Share the invite link to start collecting wishes!
             </p>
           </div>
