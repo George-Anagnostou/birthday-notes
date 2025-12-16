@@ -3,9 +3,12 @@
 import { useState, useEffect } from 'react';
 import { useAdminAuth } from '@/hooks/use-admin-auth';
 import { useCloudPrint } from '@/hooks/use-cloud-print';
+import { getAccentColor, getAccentCSSVars } from '@/lib/theme-config';
+import type { AccentColor } from '@/lib/theme-config';
 
 export default function PrintPage() {
   const [birthdayName, setBirthdayName] = useState('');
+  const [accent, setAccent] = useState<AccentColor>(getAccentColor(undefined));
 
   // Admin authentication hook
   const {
@@ -26,10 +29,25 @@ export default function PrintPage() {
     adminPassword: storedPassword,
   });
 
-  // Load birthday name after authentication
+  // Load birthday name and accent color after authentication
   useEffect(() => {
+    const fetchRecipientInfo = async () => {
+      try {
+        const response = await fetch('/api/recipient-info');
+        if (response.ok) {
+          const data = await response.json();
+          setBirthdayName(data.recipientName || 'You');
+          const accentColor = getAccentColor(data.recipientId);
+          setAccent(accentColor);
+        }
+      } catch (error) {
+        setBirthdayName('You');
+        setAccent(getAccentColor(undefined));
+      }
+    };
+
     if (authenticated) {
-      setBirthdayName(process.env.NEXT_PUBLIC_BIRTHDAY_NAME || 'You');
+      fetchRecipientInfo();
     }
   }, [authenticated]);
 
@@ -46,15 +64,41 @@ export default function PrintPage() {
 
   if (showPassword) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 p-4">
-        <div className="max-w-md w-full">
-          <div className="bg-white rounded-3xl shadow-xl p-8 border-2 border-pink-100">
-            <h2 className="text-2xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 mb-6">
+      <main
+        className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
+        style={{
+          background: `linear-gradient(135deg, ${accent.light} 0%, #ffffff 50%, ${accent.light} 100%)`,
+          ...getAccentCSSVars(accent)
+        }}
+      >
+        {/* Subtle decorative elements */}
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute top-20 left-20 w-64 h-64 rounded-full blur-3xl"
+               style={{ backgroundColor: accent.primary }}></div>
+          <div className="absolute bottom-20 right-20 w-96 h-96 rounded-full blur-3xl"
+               style={{ backgroundColor: accent.primary }}></div>
+        </div>
+
+        <div className="max-w-md w-full relative z-10">
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl p-8 border border-gray-100">
+            <div
+              className="w-16 h-1 rounded-full mx-auto mb-6 animate-pulse"
+              style={{ backgroundColor: accent.primary }}
+            ></div>
+
+            <h2
+              className="text-2xl font-bold text-center mb-6 tracking-tight"
+              style={{ color: accent.primary, fontFamily: 'var(--font-title)' }}
+            >
               Admin Access Required
             </h2>
             <form onSubmit={handlePasswordSubmit} className="space-y-4">
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                  style={{ fontFamily: 'var(--font-body)', fontWeight: 500 }}
+                >
                   Admin Password
                 </label>
                 <input
@@ -62,20 +106,39 @@ export default function PrintPage() {
                   id="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-pink-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-2 transition-all"
+                  style={{
+                    borderColor: password ? accent.primary : undefined,
+                    boxShadow: password ? `0 0 0 1px ${accent.primary}` : undefined
+                  }}
                   placeholder="Enter admin password"
                   required
                 />
               </div>
               {error && (
-                <div className="text-red-500 text-sm text-center bg-red-50 py-2 px-4 rounded-lg">
+                <div className="text-red-600 text-sm text-center bg-red-50 py-3 px-4 rounded-lg border border-red-100">
                   {error}
                 </div>
               )}
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 text-white font-semibold py-3 px-6 rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-200 disabled:opacity-50"
+                className="w-full text-white font-semibold py-3 px-6 rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-200 disabled:opacity-50"
+                style={{
+                  backgroundColor: accent.primary,
+                  fontFamily: 'var(--font-body)',
+                  fontWeight: 500,
+                }}
+                onMouseEnter={(e) => {
+                  if (!loading) {
+                    e.currentTarget.style.backgroundColor = accent.hover;
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!loading) {
+                    e.currentTarget.style.backgroundColor = accent.primary;
+                  }
+                }}
               >
                 {loading ? 'Verifying...' : 'View Print Version'}
               </button>
@@ -88,10 +151,18 @@ export default function PrintPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
-        <div className="text-center">
+      <main
+        className="min-h-screen flex items-center justify-center relative overflow-hidden"
+        style={{
+          background: `linear-gradient(135deg, ${accent.light} 0%, #ffffff 50%, ${accent.light} 100%)`,
+          ...getAccentCSSVars(accent)
+        }}
+      >
+        <div className="text-center relative z-10">
           <div className="text-4xl mb-4">✨</div>
-          <p className="text-gray-600">Loading birthday wishes...</p>
+          <p className="text-gray-600" style={{ fontFamily: 'var(--font-body)', fontWeight: 400 }}>
+            Loading birthday wishes...
+          </p>
         </div>
       </main>
     );
@@ -225,7 +296,13 @@ export default function PrintPage() {
         }
       `}</style>
 
-      <main className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
+      <main
+        className="min-h-screen relative overflow-hidden"
+        style={{
+          background: `linear-gradient(135deg, ${accent.light} 0%, #ffffff 50%, ${accent.light} 100%)`,
+          ...getAccentCSSVars(accent)
+        }}
+      >
         {/* Error message for cloud print */}
         {cloudPrintError && (
           <div className="no-print fixed top-20 left-1/2 transform -translate-x-1/2 z-50 bg-red-500 text-white px-6 py-3 rounded-xl shadow-lg">
@@ -234,11 +311,19 @@ export default function PrintPage() {
         )}
 
         {/* Header - hidden in print */}
-        <div className="no-print bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 text-white p-6 sticky top-0 z-50 shadow-lg">
+        <div
+          className="no-print text-white p-6 sticky top-0 z-50 shadow-lg"
+          style={{ backgroundColor: accent.primary }}
+        >
           <div className="max-w-6xl mx-auto flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold">Birthday Cards - Print View</h1>
-              <p className="text-white/90 mt-1">
+              <h1
+                className="text-3xl font-bold"
+                style={{ fontFamily: 'var(--font-title)' }}
+              >
+                Birthday Cards - Print View
+              </h1>
+              <p className="text-white/90 mt-1" style={{ fontFamily: 'var(--font-body)', fontWeight: 400 }}>
                 {notes.length} {notes.length === 1 ? 'card' : 'cards'} • 5×7 inch format
               </p>
             </div>
@@ -246,31 +331,71 @@ export default function PrintPage() {
               <button
                 onClick={handleCloudPrint}
                 disabled={isCloudPrinting}
-                className="bg-white text-purple-600 font-semibold py-2 px-6 rounded-xl hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="font-semibold py-2 px-6 rounded-xl hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{
+                  backgroundColor: 'white',
+                  color: accent.primary,
+                  fontFamily: 'var(--font-body)',
+                  fontWeight: 500,
+                }}
               >
                 {isCloudPrinting ? 'Generating PDF...' : 'Download PDF 📥'}
               </button>
               <button
                 onClick={handlePrint}
-                className="bg-white/20 text-white font-semibold py-2 px-6 rounded-xl hover:bg-white/30 transition-all"
+                className="text-white font-semibold py-2 px-6 rounded-xl transition-all"
+                style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                  fontFamily: 'var(--font-body)',
+                  fontWeight: 500,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+                }}
               >
                 Browser Print 🖨️
               </button>
               <a
                 href="/memory-board"
-                className="bg-white/20 text-white font-semibold py-2 px-6 rounded-xl hover:bg-white/30 transition-all"
+                className="text-white font-semibold py-2 px-6 rounded-xl transition-all inline-block"
+                style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                  fontFamily: 'var(--font-body)',
+                  fontWeight: 500,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+                }}
               >
                 Memory Board
               </a>
               <a
                 href="/admin"
-                className="bg-white/20 text-white font-semibold py-2 px-6 rounded-xl hover:bg-white/30 transition-all"
+                className="text-white font-semibold py-2 px-6 rounded-xl transition-all inline-block"
+                style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                  fontFamily: 'var(--font-body)',
+                  fontWeight: 500,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+                }}
               >
                 Admin
               </a>
               <button
                 onClick={handleLogout}
                 className="bg-red-500 text-white font-semibold py-2 px-4 rounded-xl hover:bg-red-600 transition-all"
+                style={{ fontFamily: 'var(--font-body)', fontWeight: 500 }}
               >
                 Logout
               </button>
@@ -358,9 +483,17 @@ export default function PrintPage() {
 
         {/* Footer - Print instructions (screen only) */}
         <div className="no-print text-center pb-12 px-4">
-          <div className="max-w-2xl mx-auto bg-white rounded-xl p-6 shadow-lg">
-            <h3 className="text-lg font-bold text-gray-800 mb-3">📋 Printing Instructions</h3>
-            <ul className="text-sm text-gray-600 space-y-2 text-left">
+          <div
+            className="max-w-2xl mx-auto bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-lg border"
+            style={{ borderColor: accent.light }}
+          >
+            <h3
+              className="text-lg font-bold mb-3"
+              style={{ color: accent.primary, fontFamily: 'var(--font-title)' }}
+            >
+              📋 Printing Instructions
+            </h3>
+            <ul className="text-sm text-gray-600 space-y-2 text-left" style={{ fontFamily: 'var(--font-body)', fontWeight: 400 }}>
               <li>• Each card is formatted for <strong>5×7 inch</strong> greeting card size</li>
               <li>• Set your printer to <strong>5×7 inch</strong> paper or use crop marks</li>
               <li>• Enable <strong>&ldquo;Background graphics&rdquo;</strong> in print settings for colors</li>

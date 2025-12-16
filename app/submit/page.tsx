@@ -285,7 +285,21 @@ export default function SubmitPage() {
     };
 
     return (
-      <main className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 p-4 py-12">
+      <main
+        className="min-h-screen p-4 py-12 relative overflow-hidden"
+        style={{
+          background: `linear-gradient(135deg, ${accent.light} 0%, #ffffff 50%, ${accent.light} 100%)`,
+          ...getAccentCSSVars(accent)
+        }}
+      >
+        {/* Subtle decorative elements */}
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute top-20 left-20 w-64 h-64 rounded-full blur-3xl"
+               style={{ backgroundColor: accent.primary }}></div>
+          <div className="absolute bottom-20 right-20 w-96 h-96 rounded-full blur-3xl"
+               style={{ backgroundColor: accent.primary }}></div>
+        </div>
+
         {/* Enlarged image overlay with polaroid frame */}
         {enlargedImage && (
           <div
@@ -318,18 +332,53 @@ export default function SubmitPage() {
           </div>
         )}
 
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-4xl mx-auto relative z-10">
           <div className="text-center mb-8">
-            <div className="text-4xl mb-4">👀</div>
-            <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 mb-4">
-              Preview Your Message
-            </h2>
-            <p className="text-gray-600 mb-2">
+            <div
+              className="w-16 h-1 rounded-full mx-auto mb-6 animate-pulse"
+              style={{ backgroundColor: accent.primary }}
+            ></div>
+
+            <div className="flex items-center justify-center gap-3 md:gap-4 mb-4">
+              <div className="text-3xl md:text-4xl flex-shrink-0"
+                   style={{
+                     animation: 'float 3s ease-in-out infinite',
+                     animationDelay: '0s'
+                   }}>
+                👀
+              </div>
+
+              <h2
+                className="text-3xl md:text-4xl font-bold tracking-tight"
+                style={{ color: accent.primary, fontFamily: 'var(--font-title)' }}
+              >
+                Preview Your Message
+              </h2>
+            </div>
+
+            <div
+              className="w-16 h-1 rounded-full mx-auto mb-4 animate-pulse"
+              style={{ backgroundColor: accent.primary, animationDelay: '0.5s' }}
+            ></div>
+
+            <p className="text-gray-600 mb-2" style={{ fontFamily: 'var(--font-body)', fontWeight: 400 }}>
               Here&apos;s how your note will appear on the memory board
             </p>
-            <p className="text-gray-600 text-sm">
+            <p className="text-gray-600 text-sm" style={{ fontFamily: 'var(--font-body)', fontWeight: 400 }}>
               Make any edits or submit when you&apos;re happy with it!
             </p>
+
+            {/* CSS for float animation */}
+            <style jsx>{`
+              @keyframes float {
+                0%, 100% {
+                  transform: translateY(-10px);
+                }
+                50% {
+                  transform: translateY(10px);
+                }
+              }
+            `}</style>
           </div>
 
           {/* Card Preview */}
@@ -526,20 +575,48 @@ export default function SubmitPage() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <button
               onClick={handleEdit}
-              className="bg-white text-purple-600 font-semibold py-3 px-8 rounded-xl border-2 border-purple-200 hover:shadow-lg transform hover:scale-105 transition-all duration-200"
+              className="font-semibold py-3 px-8 rounded-xl border-2 hover:shadow-lg transform hover:scale-105 transition-all duration-200"
+              style={{
+                backgroundColor: 'white',
+                color: accent.primary,
+                borderColor: accent.light,
+                fontFamily: 'var(--font-body)',
+                fontWeight: 500,
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = accent.primary;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = accent.light;
+              }}
             >
               ← Edit Message
             </button>
             <button
               onClick={handleConfirmSubmit}
               disabled={loading}
-              className="bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 text-white font-semibold py-3 px-8 rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              className="text-white font-semibold py-3 px-8 rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              style={{
+                backgroundColor: accent.primary,
+                fontFamily: 'var(--font-body)',
+                fontWeight: 500,
+              }}
+              onMouseEnter={(e) => {
+                if (!loading) {
+                  e.currentTarget.style.backgroundColor = accent.hover;
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!loading) {
+                  e.currentTarget.style.backgroundColor = accent.primary;
+                }
+              }}
             >
               {loading ? 'Submitting...' : 'Confirm & Submit 🎂'}
             </button>
           </div>
 
-          <p className="text-sm text-gray-500 mt-6 text-center">
+          <p className="text-sm text-gray-500 mt-6 text-center" style={{ fontFamily: 'var(--font-body)', fontWeight: 400 }}>
             Review your message carefully before submitting
           </p>
         </div>
@@ -555,7 +632,21 @@ export default function SubmitPage() {
     const rotation = rotations[cardIndex % rotations.length];
 
     return (
-      <main className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 p-4 py-12">
+      <main
+        className="min-h-screen p-4 py-12 relative overflow-hidden"
+        style={{
+          background: `linear-gradient(135deg, ${accent.light} 0%, #ffffff 50%, ${accent.light} 100%)`,
+          ...getAccentCSSVars(accent)
+        }}
+      >
+        {/* Subtle decorative elements */}
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute top-20 left-20 w-64 h-64 rounded-full blur-3xl"
+               style={{ backgroundColor: accent.primary }}></div>
+          <div className="absolute bottom-20 right-20 w-96 h-96 rounded-full blur-3xl"
+               style={{ backgroundColor: accent.primary }}></div>
+        </div>
+
         {/* Enlarged image overlay with polaroid frame */}
         {enlargedImage && (
           <div
@@ -588,18 +679,53 @@ export default function SubmitPage() {
           </div>
         )}
 
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-4xl mx-auto relative z-10">
           <div className="text-center mb-8">
-            <div className="text-6xl mb-4">🎉</div>
-            <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 mb-4">
-              Thank You!
-            </h2>
-            <p className="text-gray-600 mb-2">
+            <div
+              className="w-16 h-1 rounded-full mx-auto mb-6 animate-pulse"
+              style={{ backgroundColor: accent.primary }}
+            ></div>
+
+            <div className="flex items-center justify-center gap-3 md:gap-4 mb-4">
+              <div className="text-4xl md:text-5xl flex-shrink-0"
+                   style={{
+                     animation: 'float 3s ease-in-out infinite',
+                     animationDelay: '0s'
+                   }}>
+                🎉
+              </div>
+
+              <h2
+                className="text-3xl md:text-4xl font-bold tracking-tight"
+                style={{ color: accent.primary, fontFamily: 'var(--font-title)' }}
+              >
+                Thank You!
+              </h2>
+            </div>
+
+            <div
+              className="w-16 h-1 rounded-full mx-auto mb-4 animate-pulse"
+              style={{ backgroundColor: accent.primary, animationDelay: '0.5s' }}
+            ></div>
+
+            <p className="text-gray-600 mb-2" style={{ fontFamily: 'var(--font-body)', fontWeight: 400 }}>
               Your birthday message has been submitted successfully!
             </p>
-            <p className="text-gray-600 text-sm">
+            <p className="text-gray-600 text-sm" style={{ fontFamily: 'var(--font-body)', fontWeight: 400 }}>
               Here&apos;s how it will appear on the memory board:
             </p>
+
+            {/* CSS for float animation */}
+            <style jsx>{`
+              @keyframes float {
+                0%, 100% {
+                  transform: translateY(-10px);
+                }
+                50% {
+                  transform: translateY(10px);
+                }
+              }
+            `}</style>
           </div>
 
           {/* Card Preview */}
@@ -987,11 +1113,22 @@ export default function SubmitPage() {
                 setImagePreviews([]);
                 setAccessCode('');
               }}
-              className="bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 text-white font-semibold py-3 px-6 rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-200"
+              className="text-white font-semibold py-3 px-6 rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-200"
+              style={{
+                backgroundColor: accent.primary,
+                fontFamily: 'var(--font-body)',
+                fontWeight: 500,
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = accent.hover;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = accent.primary;
+              }}
             >
               Submit Another Message 💌
             </button>
-            <p className="text-sm text-gray-500 mt-4">
+            <p className="text-sm text-gray-500 mt-4" style={{ fontFamily: 'var(--font-body)', fontWeight: 400 }}>
               Your message will be included in the birthday memory board 💝
             </p>
           </div>
