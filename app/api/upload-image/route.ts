@@ -9,9 +9,12 @@ import { logger } from '@/lib/logger';
  * Returns array of blob URLs
  *
  * Environment-aware: Automatically uses dev or prod blob storage based on NODE_ENV
+ *
+ * NOTE: Images are automatically compressed on the client to ~2MB before upload.
+ * The 5MB limit here acts as a safety net for edge cases.
  */
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB (safety net - client compresses to ~2MB)
 const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
 
 // Map MIME types to safe file extensions
@@ -69,10 +72,11 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Validate file size
+      // Validate file size (should rarely trigger due to client-side compression)
       if (file.size > MAX_FILE_SIZE) {
+        logger.warn(`Unexpectedly large file received: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
         return NextResponse.json(
-          { error: `File too large: ${file.name}. Maximum size: 5MB` },
+          { error: `File too large: ${file.name}. Please try re-selecting the image.` },
           { status: 400 }
         );
       }
