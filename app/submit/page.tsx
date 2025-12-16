@@ -546,7 +546,7 @@ export default function SubmitPage() {
                       </div>
                     )}
 
-                    {previewNote.images.length >= 3 && (
+                    {previewNote.images.length === 3 && (
                       <div className="flex justify-center items-end">
                         <div
                           className="bg-white p-2 pb-6 shadow-lg hover:scale-110 hover:z-20 transition-all duration-200 relative cursor-pointer"
@@ -580,6 +580,158 @@ export default function SubmitPage() {
                             alt="Photo 3"
                             className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
                           />
+                        </div>
+                      </div>
+                    )}
+
+                    {previewNote.images.length === 4 && (
+                      <div className="flex justify-center items-center">
+                        <div className="relative">
+                          {/* Top row */}
+                          <div className="flex items-center justify-center mb-[-30px]">
+                            <div
+                              className="bg-white p-2 pb-6 shadow-lg hover:scale-110 hover:z-30 transition-all duration-200 cursor-pointer relative"
+                              style={{
+                                transform: `rotate(-4deg)`,
+                                zIndex: 2,
+                                marginRight: "-15px",
+                              }}
+                              onClick={() => setEnlargedImage(previewNote.images[0])}
+                            >
+                              <img
+                                src={previewNote.images[0]}
+                                alt="Photo 1"
+                                className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
+                              />
+                            </div>
+                            <div
+                              className="bg-white p-2 pb-6 shadow-lg hover:scale-110 hover:z-30 transition-all duration-200 cursor-pointer relative"
+                              style={{
+                                transform: `rotate(3deg)`,
+                                zIndex: 1,
+                                marginLeft: "-15px",
+                              }}
+                              onClick={() => setEnlargedImage(previewNote.images[1])}
+                            >
+                              <img
+                                src={previewNote.images[1]}
+                                alt="Photo 2"
+                                className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
+                              />
+                            </div>
+                          </div>
+                          {/* Bottom row */}
+                          <div className="flex items-center justify-center">
+                            <div
+                              className="bg-white p-2 pb-6 shadow-lg hover:scale-110 hover:z-30 transition-all duration-200 cursor-pointer relative"
+                              style={{
+                                transform: `rotate(2deg)`,
+                                zIndex: 3,
+                                marginRight: "-15px",
+                              }}
+                              onClick={() => setEnlargedImage(previewNote.images[2])}
+                            >
+                              <img
+                                src={previewNote.images[2]}
+                                alt="Photo 3"
+                                className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
+                              />
+                            </div>
+                            <div
+                              className="bg-white p-2 pb-6 shadow-lg hover:scale-110 hover:z-30 transition-all duration-200 cursor-pointer relative"
+                              style={{
+                                transform: `rotate(-3deg)`,
+                                zIndex: 4,
+                                marginLeft: "-15px",
+                              }}
+                              onClick={() => setEnlargedImage(previewNote.images[3])}
+                            >
+                              <img
+                                src={previewNote.images[3]}
+                                alt="Photo 4"
+                                className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {previewNote.images.length === 5 && (
+                      <div className="flex flex-col items-center gap-1">
+                        <div className="flex justify-center items-end">
+                          <div
+                            className="bg-white p-2 pb-6 shadow-lg hover:scale-110 hover:z-20 transition-all duration-200 relative cursor-pointer"
+                            style={{
+                              transform: `rotate(-5deg)`,
+                              zIndex: 1,
+                            }}
+                            onClick={() => setEnlargedImage(previewNote.images[0])}
+                          >
+                            <img
+                              src={previewNote.images[0]}
+                              alt="Photo 1"
+                              className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
+                            />
+                          </div>
+                          <div
+                            className="bg-white p-2 pb-6 shadow-lg hover:scale-110 hover:z-20 transition-all duration-200 relative cursor-pointer"
+                            style={{
+                              transform: `rotate(2deg) translateX(-8px)`,
+                              zIndex: 2,
+                            }}
+                            onClick={() => setEnlargedImage(previewNote.images[1])}
+                          >
+                            <img
+                              src={previewNote.images[1]}
+                              alt="Photo 2"
+                              className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
+                            />
+                          </div>
+                          <div
+                            className="bg-white p-2 pb-6 shadow-lg hover:scale-110 hover:z-20 transition-all duration-200 relative cursor-pointer"
+                            style={{
+                              transform: `rotate(-2deg) translateX(-14px)`,
+                              zIndex: 3,
+                            }}
+                            onClick={() => setEnlargedImage(previewNote.images[2])}
+                          >
+                            <img
+                              src={previewNote.images[2]}
+                              alt="Photo 3"
+                              className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex justify-center items-end -mt-3">
+                          <div
+                            className="bg-white p-2 pb-6 shadow-lg hover:scale-110 hover:z-20 transition-all duration-200 relative cursor-pointer"
+                            style={{
+                              transform: `rotate(4deg)`,
+                              zIndex: 4,
+                            }}
+                            onClick={() => setEnlargedImage(previewNote.images[3])}
+                          >
+                            <img
+                              src={previewNote.images[3]}
+                              alt="Photo 4"
+                              className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
+                            />
+                          </div>
+                          <div
+                            className="bg-white p-2 pb-6 shadow-lg hover:scale-110 hover:z-20 transition-all duration-200 relative cursor-pointer"
+                            style={{
+                              transform: `rotate(-3deg) translateX(-8px)`,
+                              zIndex: 5,
+                            }}
+                            onClick={() => setEnlargedImage(previewNote.images[4])}
+                          >
+                            <img
+                              src={previewNote.images[4]}
+                              alt="Photo 5"
+                              className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
+                            />
+                          </div>
                         </div>
                       </div>
                     )}
