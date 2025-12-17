@@ -32,6 +32,7 @@ export async function GET(request: NextRequest) {
         config: {
           postgres: envInfo.postgresUrl,
           blob: envInfo.blobToken,
+          blobTokenDetails: envInfo.blobTokenDetails,
           cloudPrint: envInfo.cloudPrintUrl,
           recipientId: process.env.RECIPIENT_ID || '❌ Not configured',
           recipientName: process.env.RECIPIENT_NAME || '❌ Not configured',
