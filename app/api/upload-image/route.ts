@@ -52,6 +52,20 @@ export async function POST(request: NextRequest) {
 
     // Get environment-specific blob token
     const blobToken = getBlobToken();
+
+    // Debug logging to help diagnose production issues
+    logger.info('🔍 Blob token check:', {
+      hasToken: !!blobToken,
+      tokenPrefix: blobToken ? blobToken.substring(0, 15) + '...' : 'none',
+      environment: isDevelopment() ? 'development' : 'production',
+      availableEnvVars: {
+        BLOB_READ_WRITE_TOKEN: !!process.env.BLOB_READ_WRITE_TOKEN,
+        BLOB_PROD_READ_WRITE_TOKEN: !!process.env.BLOB_PROD_READ_WRITE_TOKEN,
+        BLOB_DEV_READ_WRITE_TOKEN: !!process.env.BLOB_DEV_READ_WRITE_TOKEN,
+        BLOB_READ_WRITE_TOKEN_DEV: !!process.env.BLOB_READ_WRITE_TOKEN_DEV,
+      }
+    });
+
     if (!blobToken) {
       const envVar = isDevelopment() ? 'BLOB_READ_WRITE_TOKEN_DEV' : 'BLOB_READ_WRITE_TOKEN';
       return NextResponse.json(
@@ -105,9 +119,17 @@ export async function POST(request: NextRequest) {
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    logger.error('Error uploading images:', message);
+
+    // Enhanced error logging for blob upload issues
+    logger.error('Error uploading images:', {
+      message,
+      errorType: error instanceof Error ? error.constructor.name : typeof error,
+      stack: error instanceof Error ? error.stack : undefined,
+      fullError: error,
+    });
+
     return NextResponse.json(
-      { error: 'Failed to upload images' },
+      { error: 'Failed to upload images', details: message },
       { status: 500 }
     );
   }

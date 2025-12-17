@@ -12,6 +12,7 @@
     "@tailwindcss/typography": "^0.5.19",
     "@upstash/ratelimit": "^2.0.7",
     "@upstash/redis": "^1.35.6",
+    "@vercel/analytics": "^1.6.1",
     "@vercel/blob": "^2.0.0",
     "browser-image-compression": "^2.0.2",
     "isomorphic-dompurify": "^2.32.0",
