@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import imageCompression from 'browser-image-compression';
 import { logger } from '@/lib/logger';
 import RichTextEditor from '@/components/RichTextEditor';
 import type { Note } from '@/types/note';
@@ -56,6 +57,8 @@ export default function SubmitPage() {
   const [submittedNote, setSubmittedNote] = useState<Note | null>(null);
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
   const [accent, setAccent] = useState<AccentColor>(getAccentColor(undefined));
+  const [compressing, setCompressing] = useState(false);
+  const [compressionProgress, setCompressionProgress] = useState<string>('');
   const router = useRouter();
 
   useEffect(() => {
@@ -82,72 +85,102 @@ export default function SubmitPage() {
   const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
 
-    // Limit to 5 images
+    // Reset error state
+    setError('');
+
+    // Limit to 5 images total
     if (files.length + selectedImages.length > 5) {
       setError('Maximum 5 images allowed');
       return;
     }
 
-    // Validate file types and sizes
-    const validFiles: File[] = [];
+    // Validate file types
     for (const file of files) {
       if (!file.type.startsWith('image/')) {
         setError('Only image files are allowed');
         return;
       }
-      if (file.size > 5 * 1024 * 1024) {
-        setError('Each image must be less than 5MB');
-        return;
-      }
-      validFiles.push(file);
     }
 
-    // Create previews with proper error handling
-    const previewPromises = validFiles.map(file => {
-      return new Promise<{ preview: string; file: File } | null>((resolve) => {
-        const reader = new FileReader();
+    // Start compression process
+    setCompressing(true);
+    setCompressionProgress(`Processing ${files.length} image${files.length > 1 ? 's' : ''}...`);
 
-        reader.onloadend = () => {
-          resolve({ preview: reader.result as string, file });
-        };
+    try {
+      const compressedFiles: File[] = [];
+      const newPreviews: string[] = [];
 
-        reader.onerror = () => {
-          logger.error(`Failed to read file: ${file.name}`, reader.error);
-          // Resolve with null instead of rejecting to continue processing other files
-          resolve(null);
-        };
+      // Compression options - optimized for quality and size
+      const compressionOptions = {
+        maxSizeMB: 2, // Target 2MB - allows most photos to pass through
+        maxWidthOrHeight: 1920, // Maintains good quality for viewing
+        useWebWorker: true, // Better performance
+        fileType: undefined, // Preserve original format (JPEG/PNG/etc)
+      };
 
-        reader.readAsDataURL(file);
-      });
-    });
+      // Process each file
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const fileNumber = i + 1;
+        const totalFiles = files.length;
 
-    // Wait for all previews to load
-    const results = await Promise.all(previewPromises);
+        setCompressionProgress(`Optimizing image ${fileNumber}/${totalFiles}...`);
 
-    // Filter out failed reads
-    const successfulPreviews: string[] = [];
-    const successfulFiles: File[] = [];
-    const failedFiles: string[] = [];
+        try {
+          // Get original size for logging
+          const originalSizeMB = (file.size / 1024 / 1024).toFixed(2);
 
-    results.forEach((result) => {
-      if (result) {
-        successfulPreviews.push(result.preview);
-        successfulFiles.push(result.file);
-      } else {
-        // This shouldn't happen often, but handle gracefully
-        failedFiles.push('Unknown file');
+          // Compress the image
+          const compressedFile = await imageCompression(file, compressionOptions);
+
+          // Get compressed size
+          const compressedSizeMB = (compressedFile.size / 1024 / 1024).toFixed(2);
+
+          // Log compression results
+          logger.debug(
+            `Compressed ${file.name}: ${originalSizeMB}MB → ${compressedSizeMB}MB`
+          );
+
+          // Create preview from compressed file
+          const reader = new FileReader();
+          const previewPromise = new Promise<string>((resolve, reject) => {
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(compressedFile);
+          });
+
+          const preview = await previewPromise;
+          newPreviews.push(preview);
+          compressedFiles.push(compressedFile);
+        } catch (compressionError) {
+          logger.error(`Failed to compress ${file.name}:`, compressionError);
+          setError(`Failed to process ${file.name}. Please try again.`);
+          setCompressing(false);
+          setCompressionProgress('');
+          return;
+        }
       }
-    });
 
-    setImagePreviews([...imagePreviews, ...successfulPreviews]);
-    setSelectedImages([...selectedImages, ...successfulFiles]);
+      // Update state with compressed images
+      setImagePreviews([...imagePreviews, ...newPreviews]);
+      setSelectedImages([...selectedImages, ...compressedFiles]);
 
-    // Inform user if any files failed
-    if (failedFiles.length > 0) {
-      setError(`Some files could not be previewed. ${successfulFiles.length} of ${validFiles.length} images loaded successfully.`);
-    } else {
-      setError('');
+      // Show success message briefly
+      setCompressionProgress(
+        `✓ ${files.length} image${files.length > 1 ? 's' : ''} ready!`
+      );
+      setTimeout(() => {
+        setCompressionProgress('');
+      }, 2000);
+    } catch (error) {
+      logger.error('Image processing error:', error);
+      setError('Failed to process images. Please try again.');
+    } finally {
+      setCompressing(false);
     }
+
+    // Reset the input so the same file can be selected again if needed
+    e.target.value = '';
   };
 
   const removeImage = (index: number) => {
@@ -513,7 +546,7 @@ export default function SubmitPage() {
                       </div>
                     )}
 
-                    {previewNote.images.length >= 3 && (
+                    {previewNote.images.length === 3 && (
                       <div className="flex justify-center items-end">
                         <div
                           className="bg-white p-2 pb-6 shadow-lg hover:scale-110 hover:z-20 transition-all duration-200 relative cursor-pointer"
@@ -547,6 +580,158 @@ export default function SubmitPage() {
                             alt="Photo 3"
                             className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
                           />
+                        </div>
+                      </div>
+                    )}
+
+                    {previewNote.images.length === 4 && (
+                      <div className="flex justify-center items-center">
+                        <div className="relative">
+                          {/* Top row */}
+                          <div className="flex items-center justify-center mb-[-30px]">
+                            <div
+                              className="bg-white p-2 pb-6 shadow-lg hover:scale-110 hover:z-30 transition-all duration-200 cursor-pointer relative"
+                              style={{
+                                transform: `rotate(-4deg)`,
+                                zIndex: 2,
+                                marginRight: "-15px",
+                              }}
+                              onClick={() => setEnlargedImage(previewNote.images[0])}
+                            >
+                              <img
+                                src={previewNote.images[0]}
+                                alt="Photo 1"
+                                className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
+                              />
+                            </div>
+                            <div
+                              className="bg-white p-2 pb-6 shadow-lg hover:scale-110 hover:z-30 transition-all duration-200 cursor-pointer relative"
+                              style={{
+                                transform: `rotate(3deg)`,
+                                zIndex: 1,
+                                marginLeft: "-15px",
+                              }}
+                              onClick={() => setEnlargedImage(previewNote.images[1])}
+                            >
+                              <img
+                                src={previewNote.images[1]}
+                                alt="Photo 2"
+                                className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
+                              />
+                            </div>
+                          </div>
+                          {/* Bottom row */}
+                          <div className="flex items-center justify-center">
+                            <div
+                              className="bg-white p-2 pb-6 shadow-lg hover:scale-110 hover:z-30 transition-all duration-200 cursor-pointer relative"
+                              style={{
+                                transform: `rotate(2deg)`,
+                                zIndex: 3,
+                                marginRight: "-15px",
+                              }}
+                              onClick={() => setEnlargedImage(previewNote.images[2])}
+                            >
+                              <img
+                                src={previewNote.images[2]}
+                                alt="Photo 3"
+                                className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
+                              />
+                            </div>
+                            <div
+                              className="bg-white p-2 pb-6 shadow-lg hover:scale-110 hover:z-30 transition-all duration-200 cursor-pointer relative"
+                              style={{
+                                transform: `rotate(-3deg)`,
+                                zIndex: 4,
+                                marginLeft: "-15px",
+                              }}
+                              onClick={() => setEnlargedImage(previewNote.images[3])}
+                            >
+                              <img
+                                src={previewNote.images[3]}
+                                alt="Photo 4"
+                                className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {previewNote.images.length === 5 && (
+                      <div className="flex flex-col items-center gap-1">
+                        <div className="flex justify-center items-end">
+                          <div
+                            className="bg-white p-2 pb-6 shadow-lg hover:scale-110 hover:z-20 transition-all duration-200 relative cursor-pointer"
+                            style={{
+                              transform: `rotate(-5deg)`,
+                              zIndex: 1,
+                            }}
+                            onClick={() => setEnlargedImage(previewNote.images[0])}
+                          >
+                            <img
+                              src={previewNote.images[0]}
+                              alt="Photo 1"
+                              className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
+                            />
+                          </div>
+                          <div
+                            className="bg-white p-2 pb-6 shadow-lg hover:scale-110 hover:z-20 transition-all duration-200 relative cursor-pointer"
+                            style={{
+                              transform: `rotate(2deg) translateX(-8px)`,
+                              zIndex: 2,
+                            }}
+                            onClick={() => setEnlargedImage(previewNote.images[1])}
+                          >
+                            <img
+                              src={previewNote.images[1]}
+                              alt="Photo 2"
+                              className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
+                            />
+                          </div>
+                          <div
+                            className="bg-white p-2 pb-6 shadow-lg hover:scale-110 hover:z-20 transition-all duration-200 relative cursor-pointer"
+                            style={{
+                              transform: `rotate(-2deg) translateX(-14px)`,
+                              zIndex: 3,
+                            }}
+                            onClick={() => setEnlargedImage(previewNote.images[2])}
+                          >
+                            <img
+                              src={previewNote.images[2]}
+                              alt="Photo 3"
+                              className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex justify-center items-end -mt-3">
+                          <div
+                            className="bg-white p-2 pb-6 shadow-lg hover:scale-110 hover:z-20 transition-all duration-200 relative cursor-pointer"
+                            style={{
+                              transform: `rotate(4deg)`,
+                              zIndex: 4,
+                            }}
+                            onClick={() => setEnlargedImage(previewNote.images[3])}
+                          >
+                            <img
+                              src={previewNote.images[3]}
+                              alt="Photo 4"
+                              className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
+                            />
+                          </div>
+                          <div
+                            className="bg-white p-2 pb-6 shadow-lg hover:scale-110 hover:z-20 transition-all duration-200 relative cursor-pointer"
+                            style={{
+                              transform: `rotate(-3deg) translateX(-8px)`,
+                              zIndex: 5,
+                            }}
+                            onClick={() => setEnlargedImage(previewNote.images[4])}
+                          >
+                            <img
+                              src={previewNote.images[4]}
+                              alt="Photo 5"
+                              className="max-w-[70px] max-h-[70px] md:max-w-[95px] md:max-h-[95px] object-contain"
+                            />
+                          </div>
                         </div>
                       </div>
                     )}
@@ -1285,8 +1470,31 @@ export default function SubmitPage() {
                 Add Photos <span className="text-gray-400 font-light">(Optional)</span>
               </label>
               <p className="text-xs text-gray-500 mb-3" style={{ fontFamily: 'var(--font-body)', fontWeight: 400 }}>
-                Up to 5 images, each less than 5MB
+                Up to 5 images (auto-optimized for upload)
               </p>
+
+              {/* Compression Progress Indicator */}
+              {compressing && (
+                <div className="mb-3 p-3 rounded-lg border-2 border-dashed animate-pulse" style={{ borderColor: accent.primary, backgroundColor: `${accent.light}20` }}>
+                  <div className="flex items-center gap-2 text-sm" style={{ color: accent.primary }}>
+                    <div className="animate-spin">⚙️</div>
+                    <span style={{ fontFamily: 'var(--font-body)', fontWeight: 500 }}>
+                      {compressionProgress}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Success Message */}
+              {!compressing && compressionProgress && (
+                <div className="mb-3 p-3 rounded-lg border" style={{ borderColor: accent.primary, backgroundColor: `${accent.light}20` }}>
+                  <div className="flex items-center gap-2 text-sm" style={{ color: accent.primary }}>
+                    <span style={{ fontFamily: 'var(--font-body)', fontWeight: 500 }}>
+                      {compressionProgress}
+                    </span>
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-3">
                 {/* Image Previews */}
@@ -1313,30 +1521,35 @@ export default function SubmitPage() {
 
                 {/* File Input */}
                 {selectedImages.length < 5 && (
-                  <label className="block">
+                  <label className={`block ${compressing ? 'opacity-50 cursor-not-allowed' : ''}`}>
                     <input
                       type="file"
                       accept="image/*"
                       multiple
                       onChange={handleImageSelect}
+                      disabled={compressing}
                       className="hidden"
                     />
                     <div
-                      className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-all"
+                      className={`border-2 border-dashed rounded-lg p-6 text-center transition-all ${compressing ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                       style={{
                         borderColor: accent.primary,
                         backgroundColor: `${accent.light}40`,
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = `${accent.light}80`;
+                        if (!compressing) {
+                          e.currentTarget.style.backgroundColor = `${accent.light}80`;
+                        }
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = `${accent.light}40`;
+                        if (!compressing) {
+                          e.currentTarget.style.backgroundColor = `${accent.light}40`;
+                        }
                       }}
                     >
                       <div className="text-3xl mb-2">📸</div>
                       <p className="text-sm text-gray-600" style={{ fontFamily: 'var(--font-body)', fontWeight: 500 }}>
-                        Click to select images
+                        {compressing ? 'Processing images...' : 'Click to select images'}
                       </p>
                       <p className="text-xs text-gray-500 mt-1" style={{ fontFamily: 'var(--font-body)', fontWeight: 400 }}>
                         {selectedImages.length}/5 images selected
