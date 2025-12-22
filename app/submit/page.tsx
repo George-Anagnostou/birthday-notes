@@ -207,41 +207,44 @@ export default function SubmitPage() {
 
     try {
       // Upload images first if any are selected
+      // Upload images ONE AT A TIME to avoid exceeding Vercel's 4.5MB payload limit
       let imageUrls: string[] = [];
       if (selectedImages.length > 0) {
-        const formData = new FormData();
-        selectedImages.forEach(image => {
+        for (let i = 0; i < selectedImages.length; i++) {
+          const image = selectedImages[i];
+          const formData = new FormData();
           formData.append('images', image);
-        });
 
-        const uploadResponse = await fetch('/api/upload-image', {
-          method: 'POST',
-          body: formData,
-        });
+          const uploadResponse = await fetch('/api/upload-image', {
+            method: 'POST',
+            body: formData,
+          });
 
-        if (!uploadResponse.ok) {
-          let errorMessage = 'Failed to upload images';
-          try {
-            const contentType = uploadResponse.headers.get('content-type');
-            if (contentType && contentType.includes('application/json')) {
-              const uploadData = await uploadResponse.json();
-              errorMessage = uploadData.error || uploadData.message || errorMessage;
-            } else {
-              const text = await uploadResponse.text();
-              logger.error(`Non-JSON upload error response (${uploadResponse.status}):`, text.substring(0, 200));
+          if (!uploadResponse.ok) {
+            let errorMessage = `Failed to upload image ${i + 1} of ${selectedImages.length}`;
+            try {
+              const contentType = uploadResponse.headers.get('content-type');
+              if (contentType && contentType.includes('application/json')) {
+                const uploadData = await uploadResponse.json();
+                errorMessage = uploadData.error || uploadData.message || errorMessage;
+              } else {
+                const text = await uploadResponse.text();
+                logger.error(`Non-JSON upload error response (${uploadResponse.status}):`, text.substring(0, 200));
+                errorMessage = `Image upload failed (${uploadResponse.status}). Please try again.`;
+              }
+            } catch (parseError) {
+              logger.error('Failed to parse upload error response:', parseError);
               errorMessage = `Image upload failed (${uploadResponse.status}). Please try again.`;
             }
-          } catch (parseError) {
-            logger.error('Failed to parse upload error response:', parseError);
-            errorMessage = `Image upload failed (${uploadResponse.status}). Please try again.`;
+            setError(errorMessage);
+            setLoading(false);
+            return;
           }
-          setError(errorMessage);
-          setLoading(false);
-          return;
-        }
 
-        const uploadData = await uploadResponse.json();
-        imageUrls = uploadData.urls;
+          const uploadData = await uploadResponse.json();
+          // Append URLs from this upload (should be just one)
+          imageUrls.push(...uploadData.urls);
+        }
       }
 
       // Submit note with image URLs
