@@ -113,8 +113,8 @@ export default function Home() {
               Leave a heartfelt message to celebrate this special day
             </p>
 
-            {/* CTA Button */}
-            <div className="pt-4">
+            {/* CTA Buttons */}
+            <div className="pt-4 flex flex-col items-center gap-6">
               <button
                 onClick={() => router.push("/submit")}
                 className="group relative px-8 py-4 rounded-xl text-white text-lg transition-all duration-300 hover:shadow-xl hover:scale-105 hover:-translate-y-1"
@@ -136,6 +136,26 @@ export default function Home() {
                        background: `linear-gradient(135deg, ${accent.primary} 0%, ${accent.dark} 100%)`,
                      }}
                 ></div>
+              </button>
+
+              <button
+                onClick={() => router.push("/recipient/login")}
+                className="px-6 py-2.5 rounded-lg text-sm font-medium border transition-all duration-200 hover:shadow-md"
+                style={{
+                  backgroundColor: 'transparent',
+                  color: accent.primary,
+                  borderColor: accent.light,
+                  fontFamily: 'var(--font-body)',
+                  fontWeight: 400,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = accent.primary;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = accent.light;
+                }}
+              >
+                View Your Notes
               </button>
             </div>
 
