@@ -98,7 +98,7 @@ export default function RecipientLoginPage() {
           </h2>
 
           <p className="text-center text-gray-600 mb-6" style={{ fontFamily: 'var(--font-body)', fontWeight: 400 }}>
-            Enter your password to view all the wonderful messages you've received
+            Enter your password to view all the wonderful messages you&apos;ve received
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
